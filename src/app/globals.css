@@ -31,7 +31,8 @@ body {
 
 
 .lpg-container {
-  max-width: 83%;
+  /* max-width: 83%; */
+  width: 1440px;
   margin: 0 auto;
   padding: 0 1rem;
 }
