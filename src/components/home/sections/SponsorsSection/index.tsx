@@ -2,12 +2,12 @@
 
 import Image, {type StaticImageData} from 'next/image';
 
-import leaderImg1 from '../../../assets/leader-img/md-serajul-mawla.png';
-import leaderImg2 from '../../../assets/leader-img/hasin-parfez.png';
-import folio1 from '../../../assets/Bento_Grid (7).png';
-import folio2 from '../../../assets/Bento_Grid (8).png';
-import sponserImg1 from './../../../assets/sponser-img/mgi.png';
-import arrowuiIcon from './../../../assets/ui-icons/Layer_1 (3).png';
+import leaderImg1 from '@/assets/leader-img/md-serajul-mawla.png';
+import leaderImg2 from '@/assets/leader-img/hasin-parfez.png';
+import folio1 from '@/assets/Bento_Grid (7).png';
+import folio2 from '@/assets/Bento_Grid (8).png';
+import sponserImg1 from '@/assets/sponser-img/mgi.png';
+import arrowuiIcon from '@/assets/ui-icons/Layer_1 (3).png';
 
 type Sponsor = {
    name: string;

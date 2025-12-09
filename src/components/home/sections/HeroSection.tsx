@@ -2,10 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import bannerImg from './../../assets/bg-img/bg-banner.jpg';
-import Header from '../../components/layout/Header';
+import bannerImg from '@assets/bg-img/bg-banner.jpg';
+import Header from '@/components/layout/Header';
 
-export function HeroSection() {
+export default function HeroSection() {
    return (
       <section className='relative '>
          <div className=''>
