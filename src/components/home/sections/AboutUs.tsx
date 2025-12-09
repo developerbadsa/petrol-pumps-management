@@ -2,10 +2,9 @@
 
 import Image from 'next/image';
 import aboutImg from './../img/Group 46.png';
-import SectionHeading from './../../ui/SectionHeading';
+import SectionHeading from '@components/ui/SectionHeading';
 
 type VisionStat = {
-   key: string;
    icon: string;
    label: string;
    value: string;
@@ -13,13 +12,11 @@ type VisionStat = {
 
 const visionStats: VisionStat[] = [
    {
-      key: 'members',
       icon: '/icons/total-members.png', // put this in public/icons
       label: 'TOTAL MEMBERS',
       value: '483',
    },
    {
-      key: 'stations',
       icon: '/icons/lpg-stations.png', // put this in public/icons
       label: 'LPG STATIONS',
       value: '928',
@@ -73,8 +70,8 @@ export default function AboutUsSection() {
 
                   {/* stats cards */}
                   <div className='mt-7 grid max-w-md gap-4 sm:grid-cols-2'>
-                     {visionStats.map(stat => (
-                        <VisionStatCard key={stat.key} {...stat} />
+                     {visionStats.map((stat, idx) => (
+                        <VisionStatCard key={idx} {...stat} />
                      ))}
                   </div>
                </div>
