@@ -34,7 +34,7 @@ const services = [
 export default function Footer() {
    return (
       <footer className='mt-20 relative pt-22 pb-12'>
-         <div className='bg-red-800'>
+         <div className=''>
             <Image
                src={footerbggridwrap}
                alt='Footer Background Grid'

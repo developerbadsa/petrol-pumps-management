@@ -6,6 +6,7 @@ import SectionHeading from '@components/ui/SectionHeading';
 import iconImg1 from './../img/Group 360.png';
 import iconImg2 from './../img/Group 51.png';
 import subtrackImg from './../img/Subtract.png';
+import objectanimation from './../../../assets/ui-icons/OBJECTS.png';
 
 type VisionStat = {
    icon: StaticImageData;
@@ -28,7 +29,7 @@ const visionStats: VisionStat[] = [
 
 export default function AboutUsSection() {
    return (
-      <section className='relative overflow-hidden  py-16'>
+      <section className='relative  py-16'>
          {/* subtle background geometry */}
 
          <div className='lpg-container relative'>
@@ -95,6 +96,14 @@ export default function AboutUsSection() {
                   </div>
                </div>
             </div>
+         </div>
+
+         <div className='  z-0 absolute  h-[550px]  -bottom-[160px] -left-[0.1%]'>
+            <Image
+               src={objectanimation}
+               alt=''
+               className='object-contain h-full w-[100%] opacity-35 rotate-180 scale-[1.2]'
+            />
          </div>
       </section>
    );
