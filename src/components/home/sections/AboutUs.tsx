@@ -1,23 +1,26 @@
 'use client';
 
-import Image from 'next/image';
+import Image, {StaticImageData} from 'next/image';
 import aboutImg from './../img/Group 46.png';
 import SectionHeading from '@components/ui/SectionHeading';
+import iconImg1 from './../img/Group 360.png';
+import iconImg2 from './../img/Group 51.png';
+import subtrackImg from './../img/Subtract.png';
 
 type VisionStat = {
-   icon: string;
+   icon: StaticImageData;
    label: string;
    value: string;
 };
 
 const visionStats: VisionStat[] = [
    {
-      icon: '/icons/total-members.png', // put this in public/icons
+      icon: iconImg1,
       label: 'TOTAL MEMBERS',
       value: '483',
    },
    {
-      icon: '/icons/lpg-stations.png', // put this in public/icons
+      icon: iconImg2,
       label: 'LPG STATIONS',
       value: '928',
    },
@@ -47,7 +50,7 @@ export default function AboutUsSection() {
             <div className='grid gap-10 items-start lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]'>
                {/* left: vision + stats */}
                <div className='max-w-xl'>
-                  <h3 className='text-[14px] font-semibold tracking-[0.2em] text-[#203566]'>
+                  <h3 className='text-[14px] font-semibold  text-[#203566]'>
                      OUR VISION
                   </h3>
 
@@ -69,7 +72,7 @@ export default function AboutUsSection() {
                   </p>
 
                   {/* stats cards */}
-                  <div className='mt-7 grid max-w-md gap-4 sm:grid-cols-2'>
+                  <div className='mt-7 grid  gap-4 sm:grid-cols-2'>
                      {visionStats.map((stat, idx) => (
                         <VisionStatCard key={idx} {...stat} />
                      ))}
@@ -77,7 +80,7 @@ export default function AboutUsSection() {
                </div>
 
                {/* right: station illustration */}
-               <div className='relative mx-auto flex max-w-[480px] items-center justify-center'>
+               <div className='relative mx-auto flex w-[580px] items-center justify-center mt-6'>
                   {/* soft glow behind image */}
                   {/* <div className='pointer-events-none absolute inset-x-6 bottom-0 top-6 rounded-[32px] bg-[radial-gradient(circle_at_center,_#7CDF6A55,_transparent_70%)]' /> */}
                   <div className='relative w-full overflow-hidden rounded-[26px] '>
@@ -99,24 +102,45 @@ export default function AboutUsSection() {
 
 function VisionStatCard({icon, label, value}: VisionStat) {
    return (
-      <div className='flex items-center gap-4 rounded-[18px] border border-[#E3EAF6] bg-white px-6 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.08)]'>
-         <div className='flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(135deg,#6ACF4F,#00A651)] shadow-[0_10px_22px_rgba(0,166,81,0.45)]'>
-            <Image
-               src={icon}
-               alt={label}
-               width={28}
-               height={28}
-               className='object-contain'
-            />
+      <article
+         className='
+        relative flex h-[250px] w-[220px] flex-col
+        overflow-hidden
+        rounded-[22px] '>
+         <div className='absolute -top-6 -right-6 inset-1 z-1'>
+            <Image src={subtrackImg} fill alt='' />
          </div>
-         <div className='text-left'>
-            <div className='text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7B8EA5]'>
-               {label}
+
+         {/* top-right green corner tab */}
+         <div
+            className='
+          pointer-events-none
+          absolute right-1 top-0
+          h-[64px] w-[150px] rounded-[40px]
+          bg-[#75B551] z-0'
+         />
+
+         {/* content */}
+         <div className='relative flex flex-1 flex-col px-7 pt-7 pb-6 z-2'>
+            {/* icon */}
+            <div className='h-[76px] w-[76px]'>
+               <Image
+                  src={icon}
+                  alt={label}
+                  className='h-full w-full object-contain drop-shadow-[0_18px_26px_rgba(0,176,109,0.55)]'
+               />
             </div>
-            <div className='mt-1 text-[30px] font-semibold leading-none text-[#203566]'>
-               {value}
+
+            {/* label + value pinned toward bottom like design */}
+            <div className='mt-auto'>
+               <p className='text-[18px] font-semibold uppercase tracking-[0.0em] '>
+                  {label}
+               </p>
+               <p className='mt-2 text-[50px] font-semibold leading-none '>
+                  {value}
+               </p>
             </div>
          </div>
-      </div>
+      </article>
    );
 }

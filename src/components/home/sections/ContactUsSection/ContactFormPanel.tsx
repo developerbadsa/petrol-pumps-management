@@ -135,12 +135,10 @@ export default function ContactFormPanel({ mapUrl }: ContactFormPanelProps) {
             type="submit"
             className="
               inline-flex h-10 items-center justify-center
-              rounded-full bg-[#16B55B]
+              rounded-full btn-bg
               px-12 text-[12px] font-semibold uppercase tracking-[0.18em]
               text-white
-              shadow-[0_18px_30px_rgba(6,142,76,0.55)]
-              hover:bg-[#14a153] transition-colors
-            "
+              hover:bg-[#14a153] transition-colors"
           >
             GET STARTED
           </button>
