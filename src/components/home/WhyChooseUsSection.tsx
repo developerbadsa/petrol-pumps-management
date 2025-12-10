@@ -8,7 +8,7 @@ import stationIllustration from './img/why-choose-station.png';
 import pillimg1 from './img/Mask group (15).png';
 import pillimg2 from './img/Mask group (16).png';
 import pillimg3 from './img/Mask group (17).png';
-import minigridbg from './img/Group 68.png';
+import minigridbg from '@assets/wrappers/verticle-container-grid.png';
 import maskgridbg from './img/Mask group (19).png';
 
 type PillId = 'mission' | 'vision' | 'activities';
