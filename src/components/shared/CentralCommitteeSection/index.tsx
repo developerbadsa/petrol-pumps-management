@@ -1,6 +1,6 @@
 'use client';
 
-import Image, {type StaticImageData} from 'next/image';
+import {type StaticImageData} from 'next/image';
 import SectionHeading from '@components/ui/SectionHeading';
 import CommitteeMemberCard from './CommitteeMemberCard';
 
