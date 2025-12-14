@@ -1,6 +1,6 @@
-import Image, { type StaticImageData } from 'next/image';
+import Image, {type StaticImageData} from 'next/image';
 
-export type Album = {
+export type AlbumCardData = {
   id: number;
   title: string;
   date: string;
@@ -9,20 +9,15 @@ export type Album = {
 };
 
 type AlbumCardProps = {
-  album: Album;
+  album: AlbumCardData;
 };
 
-const AlbumCard = ({ album }: AlbumCardProps) => {
+export default function AlbumCard({album}: AlbumCardProps) {
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_18px_40px_rgba(0,0,0,0.12)]">
       {/* top image */}
       <div className="relative h-[185px] w-full md:h-[200px]">
-        <Image
-          src={album.image}
-          alt={album.title}
-          fill
-          className="object-cover"
-        />
+        <Image src={album.image} alt={album.title} fill className="object-cover" />
       </div>
 
       {/* content */}
@@ -40,7 +35,7 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
         </p>
       </div>
 
-      {/* green edge highlight (top + border glow) */}
+      {/* green edge highlight */}
       <div className="pointer-events-none absolute inset-0 rounded-[18px] border border-[#E3EDF5]">
         <div className="h-[3px] w-full rounded-t-[18px] bg-[#6CC12A]" />
       </div>
@@ -49,6 +44,4 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
       <div className="pointer-events-none absolute inset-0 rounded-[18px] border border-transparent transition-all duration-200 group-hover:border-[#6CC12A]/70 group-hover:shadow-[0_24px_70px_rgba(0,0,0,0.18)]" />
     </article>
   );
-};
-
-export default AlbumCard;
+}

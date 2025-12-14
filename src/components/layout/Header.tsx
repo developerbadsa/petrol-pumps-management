@@ -69,9 +69,17 @@ export default function Header({heroSize}: {heroSize?: string}) {
 
          <header className='relative z-20 flex justify-center py-10 pt-[80px]'>
             {/* White pill bar */}
-<div className='relative flex h-[85px] w-full items-center justify-between rounded-full bg-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur lpg-container'>
+            <div className='relative flex h-[85px] w-full items-center justify-between rounded-full bg-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur lpg-container'>
                {/* Logo bubble */}
-<Link href='/' className=' absolute left-0 flex h-full w-[225px] items-center justify-center rounded-l-full bg-[#EEF0FB] '> <div className='relative h-[72px] w-[72px] overflow-hidden rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.35)]'> <Logo /> </div> </Link>
+               <Link
+                  href='/'
+                  className=' absolute left-0 flex h-full w-[225px] items-center justify-center rounded-l-full bg-[#EEF0FB] '>
+                  {' '}
+                  <div className='relative h-[72px] w-[72px] overflow-hidden rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.35)]'>
+                     {' '}
+                     <Logo />{' '}
+                  </div>{' '}
+               </Link>
 
                {/* Left spacer because of absolute logo */}
                <div className='ml-16 flex flex-1 items-center justify-between gap-6'>
