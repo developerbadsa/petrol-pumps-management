@@ -2,16 +2,16 @@ import PageHero from '@/components/shared/PageHero';
 import Footer from '@/components/layout/Footer';
 import newsHero from '@assets/newsfeed-img/banner.png';
 import news1 from './img/thumb1.png';
-import news from './img/news1.png';
+import news from './img/thumb1.png';
 
 import AlbumsHeroSliderSection from '@components/ui/CardSliderwithStack';
 import type {CardSlide} from '@components/ui/CardSliderwithStack';
 import GridCardSection from '@components/shared/GridCardsSection/index';
-const MediaCoverage = () => {
+const VideoGallery = () => {
    const cardSlides: CardSlide[] = [
       {
          id: 1,
-         title: 'Media Coverage',
+         title: 'Video Gallery ',
          description:
             "We are Largest one and only LPG Auto Gas Station & Conversion Workshop Owner's Association in Bangladesh. Welcome to our Gallery",
          images: [news, news, news],
@@ -19,7 +19,7 @@ const MediaCoverage = () => {
       },
       {
          id: 2,
-         title: 'Media Coverage',
+         title: 'Our Albums',
          description:
             "We are Largest one and only LPG Auto Gas Station & Conversion Workshop Owner's Association in Bangladesh. Welcome to our Gallery",
          colSpan: 5, // ~42% width
@@ -149,7 +149,7 @@ const MediaCoverage = () => {
          <GridCardSection
             columnPerRow='grid gap-5 sm:grid-cols-2 lg:grid-cols-3'
             sectionCardData={sectionCardData}
-            title='Media Coverage'
+            title='Video Gallery'
             videos={true}
             description="We are Largest one and only LPG Auto Gas Station & Conversion Workshop Owner's Association in Bangladesh. Welcome to our Gallery"
          />
@@ -159,4 +159,4 @@ const MediaCoverage = () => {
    );
 };
 
-export default MediaCoverage;
+export default VideoGallery;
