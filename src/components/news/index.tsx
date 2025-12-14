@@ -10,7 +10,6 @@ import album3 from '@assets/newsfeed-img/gallery.png';
 import AlbumsHeroSliderSection from '../ui/CardSliderwithStack';
 import type {CardSlide} from '@components/ui/CardSliderwithStack';
 import GridCardSection from './../shared/GridCardsSection/index';
-import type {cardProps} from '../../components/shared/GridCardsSection/Card';
 const NewsFeedPage = () => {
    const cardSlides: CardSlide[] = [
       {
