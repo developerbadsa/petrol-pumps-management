@@ -1,11 +1,15 @@
 'use client';
 
+import { useMemo } from 'react';
 import TablePanel from '@/components/ui/table-panel/TablePanel';
 import type { ColumnDef } from '@/components/ui/table-panel/types';
 import { MOCK_MEMBERS, type Member } from './mockMembers';
 
 export default function MembersOverviewSection() {
-  const columns: ColumnDef<Member>[] = [
+
+
+  
+  const columns = useMemo<ColumnDef<Member>[]>(() => [
     {
       id: 'sl',
       header: 'SL#',
@@ -26,7 +30,7 @@ export default function MembersOverviewSection() {
       headerClassName: 'w-[90px]',
       minWidth: 90,
       cell: (r) => (
-        <div className="h-9 w-9 overflow-hidden rounded-full bg-black/5 ring-1 ring-black/10">
+        <div className="h-9 w-9 overflow-hidden rounded-[12px] bg-black/7 ring-1 ring-black/10">
           <img
             src={r.photoUrl}
             alt={r.ownerName}
@@ -44,8 +48,7 @@ export default function MembersOverviewSection() {
       sortValue: (r) => r.ownerName,
       csvHeader: 'Owner Name',
       csvValue: (r) => r.ownerName,
-      minWidth: 200,
-      cell: (r) => <span className="text-[#2B5DAA]">{r.ownerName}</span>,
+      cell: (r) => <span className="text-inherit">{r.ownerName}</span>,
     },
     {
       id: 'memberId',
@@ -55,20 +58,19 @@ export default function MembersOverviewSection() {
       csvHeader: 'ID',
       csvValue: (r) => r.memberId,
       minWidth: 120,
-      cell: (r) => <span className="text-[#2B5DAA]">{r.memberId}</span>,
+      cell: (r) => <span className="text-inherit">{r.memberId}</span>,
     },
     {
       id: 'stations',
       header: 'Station Name',
       sortable: true,
-      sortValue: (r) => r.stations.join(' '),
+      sortValue: (r) => (r.stations ?? []).join(' '),
       csvHeader: 'Station Name',
-      csvValue: (r) => r.stations.join(' | '),
-      minWidth: 280,
+      csvValue: (r) => (r.stations ?? []).join(' | '),
       cell: (r) => (
         <div className="space-y-1 leading-[1.25]">
-          {r.stations.map((s, idx) => (
-            <div key={idx} className="text-[#2B5DAA]">
+          {(r.stations ?? []).map((s, idx) => (
+            <div key={idx} className="text-inherit">
               {s}
             </div>
           ))}
@@ -82,8 +84,7 @@ export default function MembersOverviewSection() {
       sortValue: (r) => r.zone,
       csvHeader: 'Zone',
       csvValue: (r) => r.zone,
-      minWidth: 120,
-      cell: (r) => <span className="text-[#2B5DAA]">{r.zone}</span>,
+      cell: (r) => <span className="text-inherit">{r.zone}</span>,
     },
     {
       id: 'district',
@@ -92,8 +93,7 @@ export default function MembersOverviewSection() {
       sortValue: (r) => r.district,
       csvHeader: 'District',
       csvValue: (r) => r.district,
-      minWidth: 120,
-      cell: (r) => <span className="text-[#2B5DAA]">{r.district}</span>,
+      cell: (r) => <span className="text-inherit">{r.district}</span>,
     },
     {
       id: 'upazila',
@@ -102,10 +102,9 @@ export default function MembersOverviewSection() {
       sortValue: (r) => r.upazila,
       csvHeader: 'Upazila',
       csvValue: (r) => r.upazila,
-      minWidth: 120,
-      cell: (r) => <span className="text-[#2B5DAA]">{r.upazila}</span>,
+      cell: (r) => <span className="text-inherit">{r.upazila}</span>,
     },
-  ];
+  ], []);
 
   return (
     <section className="relative overflow-hidden bg-[#F4F9F4] py-14">
@@ -127,9 +126,8 @@ export default function MembersOverviewSection() {
             columns={columns}
             getRowKey={(r) => String(r.sl)}
             exportFileName="members-export.csv"
-            tableMinWidth={1100}
             searchText={(m) =>
-              [m.ownerName, m.memberId, m.zone, m.district, m.upazila, ...m.stations].join(' ')
+              [m.ownerName, m.memberId, m.zone, m.district, m.upazila, ...(m.stations ?? [])].join(' ')
             }
           />
         </div>

@@ -30,17 +30,26 @@ const MAIN_NAV: NavItem[] = [
          {label: 'VIDEO GALLERY', href: '/gallery/video-gallery'},
       ],
    },
-  {
-    key: 'committee',
-    label: 'COMMITTEE',
-    href: '/committee',
-    children: [
-      {label: 'ADVISORS', href: '/committee/advisors'},
-      {label: 'CENTRAL COMMITTEE', href: '/committee/central-committee'},
-      {label: 'ZONAL COMMITTEE', href: '/committee/zonal-committee'},
-    ],
-  },
-   {key: 'stations', label: 'MEMBER STATIONS', href: '/stations'},
+   {
+      key: 'committee',
+      label: 'COMMITTEE',
+      href: '/committee',
+      children: [
+         {label: 'ADVISORS', href: '/committee/advisors'},
+         {label: 'CENTRAL COMMITTEE', href: '/committee/central-committee'},
+         {label: 'ZONAL COMMITTEE', href: '/committee/zonal-committee'},
+      ],
+   },
+   {
+      key: 'stations',
+      label: 'MEMBER STATIONS',
+      href: '#',
+      children: [
+         {label: 'Member List', href: '/members/all-members'},
+         {label: 'CENTRAL COMMITTEE', href: '/committee/central-committee'},
+         {label: 'ZONAL COMMITTEE', href: '/committee/zonal-committee'},
+      ],
+   },
    {key: 'contact', label: 'CONTACT', href: '/contact'},
    {key: 'downloads', label: 'DOWNLOAD', href: '/downloads'},
    {key: 'notices', label: 'NOTICES', href: '/notices'},
