@@ -50,10 +50,21 @@ export const DASH_NAV: NavItem[] = [
 
   { key: 'inbox', label: 'Inbox', href: '/inbox', icon: Inbox },
   { key: 'committee', label: 'Manage Committee', href: '/manage-committee', icon: UsersRound },
-  { key: 'media', label: 'Multimedia', href: '/multimedia', icon: ImageIcon },
+  {
+    key: 'media',
+    label: 'Multimedia',
+    icon: ImageIcon,
+    children: [
+      { label: 'Banners', href: '/multimedia/banners' },
+      { label: 'Photo Gallery', href: '/multimedia/photo-gallery' },
+      { label: 'Video Gallery', href: '/multimedia/video-gallery' },
+      { label: 'POPUP Ads', href: '/multimedia/popup-ads' },
+    ],
+  },
   { key: 'notices', label: 'Notices', href: '/notices', icon: Bell },
   { key: 'downloads', label: 'Downloads', href: '/downloads', icon: Download },
   { key: 'settings', label: 'Setting', href: '/settings', icon: Settings },
+    { key: 'logout', label: 'Logout', href: '/', icon: LogOut },
 ];
 
 export const DASH_FOOTER: NavItem[] = [
