@@ -21,4 +21,5 @@ export type ColumnDef<T> = {
   // export
   csvHeader?: string;
   csvValue?: (row: T) => string | number;
+
 };
