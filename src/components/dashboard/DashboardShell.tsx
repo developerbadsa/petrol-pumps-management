@@ -4,7 +4,7 @@ import Topbar from './Topbar';
 export default function DashboardShell({
    children,
 }: {
-   children: React.ReactNode;
+   children?: React.ReactNode;
 }) {
    return (
       <div className='min-h-dvh bg-white'>
