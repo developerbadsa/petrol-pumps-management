@@ -2,8 +2,10 @@ import {env} from '@/lib/env';
 import {mockDelay} from '@/lib/mockDelay';
 import {MOCK_OWNERS} from './mock';
 import type {OwnerRow} from './types';
+import { RegisterOwnerInput } from './register-owner/types';
 
 export type OwnersRepo = {
+  registerOwner(input: RegisterOwnerInput): Promise<unknown>;
   listUnverified: () => Promise<OwnerRow[]>;
   listVerified: () => Promise<OwnerRow[]>;
   approve: (id: string) => Promise<void>;
@@ -17,15 +19,15 @@ let store: OwnerRow[] = structuredClone(MOCK_OWNERS);
 const mockOwnersRepo: OwnersRepo = {
   async listUnverified() {
     await mockDelay(250);
-    return store.filter((o) => o.status === 'UNVERIFIED').map((o) => ({...o}));
+    return store.filter((o) => o.status === 'UNVERIFIED').map((o) => ({ ...o }));
   },
   async listVerified() {
     await mockDelay(250);
-    return store.filter((o) => o.status === 'VERIFIED').map((o) => ({...o}));
+    return store.filter((o) => o.status === 'VERIFIED').map((o) => ({ ...o }));
   },
   async approve(id) {
     await mockDelay(300);
-    store = store.map((o) => (o.id === id ? {...o, status: 'VERIFIED'} : o));
+    store = store.map((o) => (o.id === id ? { ...o, status: 'VERIFIED' } : o));
   },
   async reject(id) {
     await mockDelay(300);
@@ -36,6 +38,9 @@ const mockOwnersRepo: OwnersRepo = {
     await mockDelay(250);
     // Placeholder: later this can open a modal or navigate to a document/section page.
   },
+  registerOwner: function (input: RegisterOwnerInput): Promise<unknown> {
+    throw new Error('Function not implemented.');
+  }
 };
 
 const apiOwnersRepo: OwnersRepo = {
@@ -54,6 +59,9 @@ const apiOwnersRepo: OwnersRepo = {
   async addSection() {
     throw new Error('API repo not implemented yet');
   },
+  registerOwner: function (input: RegisterOwnerInput): Promise<unknown> {
+    throw new Error('Function not implemented.');
+  }
 };
 
 export const ownersRepo = env.dataMode === 'mock' ? mockOwnersRepo : apiOwnersRepo;
