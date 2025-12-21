@@ -3,17 +3,12 @@ import {mockDelay} from '@/lib/mockDelay';
 import {MOCK_OWNERS} from './mock';
 import type {OwnerRow} from './types';
 
-//  import your existing input type from register-owner feature
-import type {RegisterOwnerInput} from './register-owner/types';
-
 export type OwnersRepo = {
   listUnverified: () => Promise<OwnerRow[]>;
   listVerified: () => Promise<OwnerRow[]>;
   approve: (id: string) => Promise<void>;
   reject: (id: string) => Promise<void>;
   addSection: (id: string) => Promise<void>;
-
-  registerOwner: (input: RegisterOwnerInput) => Promise<void>;
 };
 
 // In-memory store for mock mode
@@ -34,28 +29,12 @@ const mockOwnersRepo: OwnersRepo = {
   },
   async reject(id) {
     await mockDelay(300);
+    // For mock: just remove it from the list
     store = store.filter((o) => o.id !== id);
   },
   async addSection() {
     await mockDelay(250);
-  },
-
-  //  mock register
-  async registerOwner(input) {
-    await mockDelay(350);
-
-    // Create a new row without guessing your full OwnerRow shape:
-    // use an existing row as template + merge input safely.
-    const template = store[0] ?? ({} as OwnerRow);
-
-    const next: OwnerRow = {
-      ...structuredClone(template),
-      ...(input as Partial<OwnerRow>),
-      id: `own_${Date.now()}`,
-      status: 'UNVERIFIED',
-    };
-
-    store = [next, ...store];
+    // Placeholder: later this can open a modal or navigate to a document/section page.
   },
 };
 
@@ -73,10 +52,6 @@ const apiOwnersRepo: OwnersRepo = {
     throw new Error('API repo not implemented yet');
   },
   async addSection() {
-    throw new Error('API repo not implemented yet');
-  },
-
-  async registerOwner() {
     throw new Error('API repo not implemented yet');
   },
 };

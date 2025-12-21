@@ -1,5 +1,5 @@
-import {env} from '@/env';
-import type {RegisterOwnerInput, RegisterOwnerResult} from './register-owner/types';
+import {env} from '@/lib/env';
+import type {RegisterOwnerInput, RegisterOwnerResult} from './types';
 
 export type OwnersRepo = {
   registerOwner: (input: RegisterOwnerInput) => Promise<RegisterOwnerResult>;
