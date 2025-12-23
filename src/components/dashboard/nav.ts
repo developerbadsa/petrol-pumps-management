@@ -61,8 +61,8 @@ export const DASH_NAV: NavItem[] = [
       { label: 'POPUP Ads', href: '/multimedia/popup-ads' },
     ],
   },
-  { key: 'notices', label: 'Notices', href: '/notices', icon: Bell },
-  { key: 'downloads', label: 'Downloads', href: '/downloads', icon: Download },
+  { key: 'notices', label: 'Notices', href: '/dashboard-notices', icon: Bell },
+  { key: 'downloads', label: 'Downloads', href: '/dashboard-downloads', icon: Download },
   { key: 'settings', label: 'Setting', href: '/settings', icon: Settings },
     { key: 'logout', label: 'Logout', href: '/', icon: LogOut },
 ];
