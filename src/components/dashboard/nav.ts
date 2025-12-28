@@ -14,12 +14,16 @@ import {
 } from 'lucide-react';
 
 export type NavChild = { label: string; href: string };
+
+export type NavAction = 'logout';
+
 export type NavItem = {
   key: string;
   label: string;
   href?: string;
   icon: React.ComponentType<{ size?: number }>;
   children?: NavChild[];
+  action?: NavAction;
 };
 
 export const DASH_NAV: NavItem[] = [
@@ -50,6 +54,7 @@ export const DASH_NAV: NavItem[] = [
 
   { key: 'inbox', label: 'Inbox', href: '/inbox', icon: Inbox },
   { key: 'committee', label: 'Manage Committee', href: '/manage-committee', icon: UsersRound },
+
   {
     key: 'media',
     label: 'Multimedia',
@@ -61,23 +66,27 @@ export const DASH_NAV: NavItem[] = [
       { label: 'POPUP Ads', href: '/multimedia/popup-ads' },
     ],
   },
+
   { key: 'notices', label: 'Notices', href: '/dashboard-notices', icon: Bell },
   { key: 'downloads', label: 'Downloads', href: '/dashboard-downloads', icon: Download },
+
   {
     key: 'settings',
     label: 'Setting',
     icon: Settings,
     children: [
-      {label: 'Membership Fees', href: '/settings/membership-fees'},
-      {label: 'Division', href: '/settings/division'},
-      {label: 'District', href: '/settings/district'},
-      {label: 'Upazila/Thana', href: '/settings/upazila-thana'},
-      {label: 'SMS', href: '/settings/sms'},
+      { label: 'Membership Fees', href: '/settings/membership-fees' },
+      { label: 'Division', href: '/settings/division' },
+      { label: 'District', href: '/settings/district' },
+      { label: 'Upazila/Thana', href: '/settings/upazila-thana' },
+      { label: 'SMS', href: '/settings/sms' },
     ],
   },
-    { key: 'logout', label: 'Logout', href: '/', icon: LogOut },
+
+  //  action item (no href)
+  { key: 'logout', label: 'Logout', icon: LogOut, action: 'logout' },
 ];
 
 export const DASH_FOOTER: NavItem[] = [
-  { key: 'logout', label: 'Logout', href: '/logout', icon: LogOut },
+  { key: 'logout', label: 'Logout', icon: LogOut, action: 'logout' },
 ];

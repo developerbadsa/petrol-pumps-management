@@ -51,6 +51,7 @@ export function AuthProvider({
     try {
       await fetch('/api/auth/logout', {method: 'POST'});
       setUser(null);
+      window.location.href = '/login';
     } finally {
       setLoading(false);
     }

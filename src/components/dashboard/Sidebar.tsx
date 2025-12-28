@@ -6,12 +6,14 @@ import { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { DASH_FOOTER, DASH_NAV, type NavItem } from './nav';
 import { Logo } from './../ui/Logo';
+import { useAuth } from '@/features/auth/AuthProvider';
 
 const isActive = (pathname: string, href?: string) =>
   href ? pathname === href || pathname.startsWith(href + '/') : false;
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { logout, loading } = useAuth();
 
   const defaultOpenKeys = useMemo(() => {
     const keys = new Set<string>();
@@ -31,6 +33,26 @@ export default function Sidebar() {
 
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
+
+    //  ACTION: logout (button, not Link)
+    if (item.action === 'logout') {
+      return (
+        <button
+          key={item.key}
+          type="button"
+          onClick={logout}
+          disabled={loading}
+          className={[
+            'mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-left',
+            'text-slate-700 hover:bg-slate-100/70',
+            'disabled:opacity-60 disabled:hover:bg-transparent',
+          ].join(' ')}
+        >
+          <Icon size={16} />
+          {loading ? 'Logging out...' : item.label}
+        </button>
+      );
+    }
 
     if (item.children?.length) {
       const expanded = !!open[item.key];
@@ -100,9 +122,8 @@ export default function Sidebar() {
     <aside className="sticky top-0 hidden h-dvh w-[270px] shrink-0 border-r border-slate-200/60 bg-[#9191910D] backdrop-blur lg:block">
       <div className="flex h-full flex-col px-4 py-6">
         <div className="mb-6 flex items-center justify-center">
-          {/* Replace with your actual logo asset */}
           <div className="relative h-[76px] w-[76px] overflow-hidden rounded-full border border-slate-200 bg-white">
-            <Logo/>
+            <Logo />
           </div>
         </div>
 

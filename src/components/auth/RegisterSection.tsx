@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import {useMemo, useState} from 'react';
+import {useRouter} from 'next/navigation';
 import MeshCorners from '@/components/ui/MeshCorners';
 
 type Step = 'FORM' | 'DONE';
@@ -15,11 +16,6 @@ type FormState = {
   address: string;
 };
 
-async function registerApi(_: FormState): Promise<{ok: true}> {
-  await new Promise(r => setTimeout(r, 700));
-  return {ok: true};
-}
-
 function cx(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ');
 }
@@ -29,13 +25,20 @@ function onlyDigits(s: string) {
 }
 
 function isValidEmail(v: string) {
-  // simple + stable for UI validation (backend should re-validate)
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
 function isValidPhone(v: string) {
   const d = onlyDigits(v);
   return d.length >= 10 && d.length <= 14;
+}
+
+async function safeJson(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 function FieldRow({
@@ -56,6 +59,8 @@ function FieldRow({
 }
 
 export default function RegisterSection() {
+  const router = useRouter();
+
   const [step, setStep] = useState<Step>('FORM');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,19 +93,61 @@ export default function RegisterSection() {
   const submit = async () => {
     setError(null);
 
-    if (!form.stationOwnerName.trim()) return setError('Station owner name is required.');
-    if (!isValidEmail(form.email)) return setError('Please enter a valid email address.');
-    if (!isValidPhone(form.phone)) return setError('Please enter a valid phone number.');
-    if (form.password.length < 6) return setError('Password must be at least 6 characters.');
-    if (form.confirmPassword !== form.password) return setError('Confirm password does not match.');
-    if (!form.address.trim()) return setError('Residential address is required.');
+    if (!form.stationOwnerName.trim())
+      return setError('Station owner name is required.');
+    if (!isValidEmail(form.email))
+      return setError('Please enter a valid email address.');
+    if (!isValidPhone(form.phone))
+      return setError('Please enter a valid phone number.');
+    if (form.password.length < 6)
+      return setError('Password must be at least 6 characters.');
+    if (form.confirmPassword !== form.password)
+      return setError('Confirm password does not match.');
+    if (!form.address.trim())
+      return setError('Residential address is required.');
 
     setPending(true);
     try {
-      await registerApi(form);
+      // Map your UI fields to backend required fields
+      const payload = {
+        full_name: form.stationOwnerName.trim(),
+        email: form.email.trim(),
+        phone_number: form.phone.trim(),
+        password: form.password,
+        password_confirmation: form.confirmPassword,
+        // backend supports these, optional:
+        // username: '',
+        // bio: form.address.trim(),
+      };
+
+      // Next.js route handler: /api/auth/register -> Laravel /register -> sets HttpOnly token cookie
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        cache: 'no-store',
+        body: JSON.stringify(payload),
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        const firstFieldError =
+          data?.errors && Object.values(data.errors)?.[0]
+            ? (Object.values(data.errors)[0] as string[])?.[0]
+            : null;
+
+        throw new Error(
+          firstFieldError || data?.message || 'Registration failed'
+        );
+      }
+
       setStep('DONE');
-    } catch (e) {
-      setError('Registration failed. Please try again.');
+
+      // If register sets cookie token, you can go directly to dashboard
+      router.replace('/dashboard');
+      router.refresh();
+    } catch (e: any) {
+      setError(e?.message ?? 'Registration failed. Please try again.');
     } finally {
       setPending(false);
     }
@@ -229,7 +276,9 @@ export default function RegisterSection() {
 
                   <p className="text-center text-[10px] text-[#6F8093]">
                     Already registered?{' '}
-                    <Link href="/login" className="font-semibold text-[#009970] hover:underline">
+                    <Link
+                      href="/login"
+                      className="font-semibold text-[#009970] hover:underline">
                       Login Now →
                     </Link>
                   </p>
@@ -243,9 +292,9 @@ export default function RegisterSection() {
                   </div>
 
                   <Link
-                    href="/login"
+                    href="/dashboard"
                     className="inline-flex h-8 items-center justify-center rounded-full bg-[#009970] px-6 text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 active:brightness-95">
-                    Go to Login
+                    Go to Dashboard
                   </Link>
                 </div>
               )}
