@@ -1,7 +1,7 @@
 import PageHero from '@/components/shared/PageHero';
 import Footer from '@/components/layout/Footer';
 import heroImg from '@assets/bg-img/starlink-banner.png';
-import ContactUsWithForm from './../../components/shared/ContactSectionWithForm/index';
+import ContactUsWithForm from '../../../components/shared/ContactSectionWithForm/index';
 
 export default function ContactPage() {
    return (

@@ -2,19 +2,20 @@
 
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
+import {useRouter} from 'next/navigation';
 import MeshCorners from '@/components/ui/MeshCorners';
 
-type Step = 'PHONE' | 'OTP' | 'DONE';
+type Step = 'PHONE' | 'OTP' | 'CREDS' | 'DONE';
 
 type OtpMeta = {
    requestId: string;
    sentAt: number; // ms
 };
 
-const OTP_LENGTH = 6;
+const OTP_LENGTH = 4;
 const RESEND_SECONDS = 30;
 
-// Mock API (replace later with real endpoints)
+// Mock API (replace later with real OTP endpoints)
 async function requestOtpApi(phone: string): Promise<{requestId: string}> {
    await new Promise(r => setTimeout(r, 650));
    return {
@@ -22,14 +23,14 @@ async function requestOtpApi(phone: string): Promise<{requestId: string}> {
    };
 }
 
-// For testing: accept "123456"
+// For testing: accept "1234"
 async function verifyOtpApi(args: {
    requestId: string;
    phone: string;
    otp: string;
 }): Promise<{ok: true}> {
-   await new Promise(r => setTimeout(r, 650));
-   if (args.otp !== '123456') throw new Error('Invalid OTP');
+   await new Promise(r => setTimeout(r, 450));
+   if (args.otp !== '1234') throw new Error('Invalid OTP');
    return {ok: true};
 }
 
@@ -54,10 +55,15 @@ function isValidPhone(p: string) {
 }
 
 export default function LoginSection() {
+   const router = useRouter();
+
    const [step, setStep] = useState<Step>('PHONE');
    const [phone, setPhone] = useState('');
    const [otp, setOtp] = useState('');
    const [meta, setMeta] = useState<OtpMeta | null>(null);
+
+   const [email, setEmail] = useState('');
+   const [password, setPassword] = useState('');
 
    const [pending, setPending] = useState(false);
    const [error, setError] = useState<string | null>(null);
@@ -79,6 +85,12 @@ export default function LoginSection() {
    const canVerify =
       otp.length === OTP_LENGTH && Boolean(meta?.requestId) && !pending;
 
+   const canLogin =
+      isValidPhone(phone) &&
+      email.trim().length > 3 &&
+      password.length >= 4 &&
+      !pending;
+
    const submitPhone = async () => {
       setError(null);
       const p = phone.trim();
@@ -93,7 +105,7 @@ export default function LoginSection() {
          setMeta({requestId: res.requestId, sentAt: Date.now()});
          setOtp('');
          setStep('OTP');
-      } catch (e) {
+      } catch {
          setError('Failed to send OTP. Please try again.');
       } finally {
          setPending(false);
@@ -109,7 +121,7 @@ export default function LoginSection() {
          const res = await requestOtpApi(phone.trim());
          setMeta({requestId: res.requestId, sentAt: Date.now()});
          setOtp('');
-      } catch (e) {
+      } catch {
          setError('Failed to resend OTP. Please try again.');
       } finally {
          setPending(false);
@@ -121,7 +133,7 @@ export default function LoginSection() {
 
       setError(null);
       if (otp.length !== OTP_LENGTH) {
-         setError('Please enter the 6-digit OTP.');
+         setError(`Please enter the ${OTP_LENGTH}-digit OTP.`);
          return;
       }
 
@@ -132,9 +144,62 @@ export default function LoginSection() {
             phone: phone.trim(),
             otp,
          });
-         setStep('DONE');
-      } catch (e) {
+
+         // After OTP: ask for email + password (backend login requires them)
+         setStep('CREDS');
+      } catch {
          setError('OTP did not match. Please try again.');
+      } finally {
+         setPending(false);
+      }
+   };
+
+   const submitCreds = async () => {
+      setError(null);
+
+      const p = phone.trim();
+      const e = email.trim();
+
+      if (!isValidPhone(p)) {
+         setError('Please enter a valid phone number.');
+         return;
+      }
+      if (!e) {
+         setError('Please enter your email.');
+         return;
+      }
+      if (!password) {
+         setError('Please enter your password.');
+         return;
+      }
+
+      setPending(true);
+      try {
+         // Your Next.js route handler should proxy to Laravel /login and set HttpOnly cookie
+         const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+               phone_number: p,
+               email: e,
+               password,
+            }),
+         });
+
+         const data = await res.json().catch(() => null);
+
+         if (!res.ok) {
+            const firstFieldError =
+               data?.errors &&
+               Object.values(data.errors)?.[0] &&
+               (Object.values(data.errors)[0] as string[])?.[0];
+
+            throw new Error(firstFieldError || data?.message || 'Login failed');
+         }
+
+         setStep('DONE');
+      } catch (e: any) {
+         setError(e?.message ?? 'Login failed. Please try again.');
       } finally {
          setPending(false);
       }
@@ -147,10 +212,14 @@ export default function LoginSection() {
       setStep('PHONE');
    };
 
+   const goBackToOtp = () => {
+      setError(null);
+      setStep('OTP');
+   };
+
    return (
       <section className='relative overflow-hidden bg-[#F4F9F4] py-14'>
-
-         <div className="bg-red-400">
+         <div className='bg-red-400'>
             <MeshCorners
                className='z-0'
                color='#2D8A2D'
@@ -165,8 +234,7 @@ export default function LoginSection() {
 
          <div className='lpg-container relative z-10'>
             {/* glass panel like screenshot */}
-<div className="rounded-[18px] bg-white/45 p-8 shadow-[0_18px_55px_rgba(0,0,0,0.10)] backdrop-blur-sm md:p-12">
-
+            <div className='rounded-[18px] bg-white/45 p-8 shadow-[0_18px_55px_rgba(0,0,0,0.10)] backdrop-blur-sm md:p-12'>
                <div className='mx-auto w-full max-w-[560px] overflow-hidden rounded-[10px] bg-white shadow-[0_16px_45px_rgba(0,0,0,0.08)]'>
                   {/* card header */}
                   <div className='flex h-11 items-center justify-center bg-[#009970]'>
@@ -301,9 +369,76 @@ export default function LoginSection() {
                            <p className='text-center text-[10px] text-[#6F8093]'>
                               Test OTP (dev):{' '}
                               <span className='font-semibold text-[#133374]'>
-                                 123456
+                                 1234
                               </span>
                            </p>
+                        </div>
+                     )}
+
+                     {step === 'CREDS' && (
+                        <div className='space-y-5'>
+                           <p className='text-center text-[11px] text-[#6F8093]'>
+                              Continue login for{' '}
+                              <span className='font-semibold text-[#133374]'>
+                                 {maskPhone(phone)}
+                              </span>
+                           </p>
+
+                           <div className='space-y-3'>
+                              <div className='flex items-center justify-center gap-3'>
+                                 <label className='text-[10px] text-[#6F8093]'>
+                                    Email
+                                 </label>
+                                 <input
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    inputMode='email'
+                                    autoComplete='email'
+                                    className={cx(
+                                       'h-7 w-[200px] rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] text-[#2B3A4A] outline-none',
+                                       'focus:border-[#0B8B4B]'
+                                    )}
+                                 />
+                              </div>
+
+                              <div className='flex items-center justify-center gap-3'>
+                                 <label className='text-[10px] text-[#6F8093]'>
+                                    Pass
+                                 </label>
+                                 <input
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    type='password'
+                                    autoComplete='current-password'
+                                    className={cx(
+                                       'h-7 w-[200px] rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] text-[#2B3A4A] outline-none',
+                                       'focus:border-[#0B8B4B]'
+                                    )}
+                                 />
+                              </div>
+                           </div>
+
+                           <div className='flex items-center justify-center gap-3'>
+                              <button
+                                 type='button'
+                                 onClick={goBackToOtp}
+                                 disabled={pending}
+                                 className='h-8 rounded-full border border-black/10 bg-white px-5 text-[10px] font-semibold text-[#2B3A4A] shadow-sm disabled:opacity-60'>
+                                 Back
+                              </button>
+
+                              <button
+                                 type='button'
+                                 onClick={submitCreds}
+                                 disabled={!canLogin}
+                                 className={cx(
+                                    'inline-flex h-8 items-center justify-center rounded-full px-6 text-[10px] font-semibold',
+                                    'bg-[#009970] text-white shadow-sm transition hover:brightness-110 active:brightness-95',
+                                    'disabled:opacity-60 disabled:hover:brightness-100'
+                                 )}>
+                                 {pending ? 'Logging in...' : 'Login'}
+                              </button>
+                           </div>
                         </div>
                      )}
 
@@ -313,11 +448,20 @@ export default function LoginSection() {
                               Login successful
                            </div>
 
-                           <Link
-                              href='/'
-                              className='inline-flex h-8 items-center justify-center rounded-full bg-[#009970] px-6 text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 active:brightness-95'>
-                              Go to Home
-                           </Link>
+                           <div className='flex items-center justify-center gap-3'>
+                              <button
+                                 type='button'
+                                 onClick={() => router.push('/dashboard')}
+                                 className='inline-flex h-8 items-center justify-center rounded-full bg-[#009970] px-6 text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 active:brightness-95'>
+                                 Go to Dashboard
+                              </button>
+
+                              <Link
+                                 href='/'
+                                 className='inline-flex h-8 items-center justify-center rounded-full border border-black/10 bg-white px-6 text-[10px] font-semibold text-[#2B3A4A] shadow-sm transition hover:bg-black/5'>
+                                 Home
+                              </Link>
+                           </div>
                         </div>
                      )}
                   </div>

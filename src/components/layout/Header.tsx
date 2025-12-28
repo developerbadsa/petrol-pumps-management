@@ -106,7 +106,7 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
           </Link>
 
           <div className="ml-16 flex flex-1 items-center justify-between gap-6">
-            <nav className="hidden flex-1 items-center justify-end gap-4 lg:flex">
+            <nav className="hidden flex-1 items-center justify-end gap-3 lg:flex">
               {MAIN_NAV.map((item) => {
                 const isDropdownOpen = openDropdownKey === item.key;
                 const active = isActive(item.href);
@@ -122,7 +122,7 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
                       href={item.href}
                       aria-haspopup={item.children ? 'menu' : undefined}
                       aria-expanded={item.children ? isDropdownOpen : undefined}
-                      className={`text-[15px] font-semibold uppercase transition-colors ${
+                      className={`text-[14px] font-semibold uppercase transition-colors ${
                         active || isDropdownOpen ? 'text-[#75B553]' : 'text-[#1C2537] hover:text-[#75B553]'
                       }`}
                     >
@@ -131,7 +131,7 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
 
                     {item.children && isDropdownOpen && (
                       <div className="dropdown-panel" role="menu">
-                        <ul className="dropdown-list">
+                        <ul className="dropdown-list bg-red-500">
                           {item.children.map((child) => (
                             <li key={child.href}>
                               <Link href={child.href} className="dropdown-item" role="menuitem">
