@@ -4,7 +4,7 @@ import { clearToken, getToken } from '@/lib/auth/cookies';
 
 export async function POST() {
   try {
-    const token = getToken();
+    const token = await getToken();
     if (token) {
       await apiFetch('/logout', { method: 'POST', auth: true });
     }
