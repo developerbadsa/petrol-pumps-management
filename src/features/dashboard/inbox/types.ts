@@ -1,10 +1,18 @@
 export type InboxMessage = {
   id: number;
-  name: string;
-  email: string;
-  phone: string;
+
+  senderName: string;
+  senderEmail?: string | null;
+  senderPhone?: string | null;
+
   subject: string;
   message: string;
-  timeLabel: string;
+
+  isRead: boolean;
+  createdAt?: string | null;
+
+  // UI helpers
+  previewText: string; // subject + message combined
+  dateLabel: string; // formatted date
   avatarUrl: string;
 };
