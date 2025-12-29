@@ -1,9 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { BannerItem } from './types';
-import { MOCK_BANNERS } from './mockBanners';
+import { useEffect, useState } from 'react';
+import type { BannerApiRow, BannerItem } from './types';
+import { normalizeList } from '@/lib/http/normalize';
+import { toAbsoluteUrl } from '@/lib/http/url';
 
 function cx(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ');
@@ -14,67 +15,78 @@ const EDIT_GRADIENT =
 const DELETE_GRADIENT =
   'bg-[linear-gradient(90deg,#FEB675_0%,#FC7160_100%)]';
 
-function uid(prefix = 'b') {
-  return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
-}
-
 function isImageFile(f: File) {
   return ['image/png', 'image/jpeg', 'image/webp'].includes(f.type);
 }
 
-export default function BannersSection() {
-  const [items, setItems] = useState<BannerItem[]>(MOCK_BANNERS);
+function mapRow(r: BannerApiRow): BannerItem | null {
+  const id = Number(r.id);
+  if (!Number.isFinite(id)) return null;
 
-  // Track object URLs so we can revoke them (avoid memory leak).
-  const objectUrlsRef = useRef<string[]>([]);
+  const origin =
+    process.env.NEXT_PUBLIC_LARAVEL_ORIGIN ?? 'https://admin.petroleumstationbd.com';
+
+  const rel =
+    r.image ?? (r as any).image_url ?? (r as any).image_path ?? '';
+
+  const imageSrc = toAbsoluteUrl(origin, rel);
+  if (!imageSrc) return null;
+
+  return {
+    id,
+    title: r.title ?? undefined,
+    type: r.type ?? undefined,
+    imageSrc,
+  };
+}
+
+export default function BannersSection() {
+  const [items, setItems] = useState<BannerItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [addOpen, setAddOpen] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/banners', {
+        method: 'GET',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
+
+      const raw = await res.json().catch(() => null);
+      if (!res.ok) return;
+
+      const rows = normalizeList<BannerApiRow>(raw);
+      const next = rows.map(mapRow).filter(Boolean) as BannerItem[];
+      setItems(next);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    return () => {
-      objectUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-      objectUrlsRef.current = [];
-    };
+    void load();
   }, []);
 
-  const onDelete = (id: string) => {
+  const onDelete = async (id: number) => {
     const ok = window.confirm('Remove this banner?');
     if (!ok) return;
+    const prev = items;
+    setItems((p) => p.filter((x) => x.id !== id));
 
-    setItems((prev) => {
-      const target = prev.find((x) => x.id === id);
-      if (typeof target?.imageSrc === 'string' && target.imageSrc.startsWith('blob:')) {
-        URL.revokeObjectURL(target.imageSrc);
-        objectUrlsRef.current = objectUrlsRef.current.filter(
-          (u) => u !== target.imageSrc
-        );
-      }
-      return prev.filter((x) => x.id !== id);
-    });
+    try {
+      const res = await fetch(`/api/banners/${id}`, {
+        method: 'DELETE',
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) setItems(prev);
+    } catch {
+      setItems(prev);
+    }
   };
 
-  const onEdit = (id: string) => {
-    // Hook your modal/drawer here (later backend integration)
-    console.log('Edit banner:', id);
-  };
-
-  const addFiles = (files: File[]) => {
-    const valid = files.filter(isImageFile);
-    if (!valid.length) return;
-
-    setItems((prev) => {
-      const next = [...prev];
-
-      for (const file of valid) {
-        const url = URL.createObjectURL(file);
-        objectUrlsRef.current.push(url);
-
-        next.push({
-          id: uid('banner'),
-          imageSrc: url,
-        });
-      }
-
-      return next;
-    });
-  };
 
   return (
     <section className="px-6 py-6">
@@ -82,20 +94,47 @@ export default function BannersSection() {
         Banners
       </h2>
 
+      {/* minimal UI change: only add button */}
+      <div className="mx-auto mt-4 flex max-w-[1280px] justify-end">
+        <button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className={cx(
+            'h-[38px] rounded-[10px] px-5 text-[14px] font-semibold text-white',
+            'shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition active:scale-[0.99]',
+            EDIT_GRADIENT
+          )}
+        >
+          Add New Banner
+        </button>
+      </div>
+
       <div className="mx-auto mt-6 max-w-[1280px]">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 xl:grid-cols-3">
           {items.map((b) => (
             <BannerCard
               key={b.id}
               item={b}
-              onEdit={() => onEdit(b.id)}
               onDelete={() => onDelete(b.id)}
             />
           ))}
-
-          <UploadCard onFiles={addFiles} />
         </div>
+
+        {!loading && items.length === 0 && (
+          <p className="mt-8 text-center text-sm text-[#7B8EA3]">
+            No banners found.
+          </p>
+        )}
       </div>
+
+      <AddBannerModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onCreated={async () => {
+          setAddOpen(false);
+          await load();
+        }}
+      />
     </section>
   );
 }
@@ -119,11 +158,9 @@ function CardShell({ children }: { children: React.ReactNode }) {
 
 function BannerCard({
   item,
-  onEdit,
   onDelete,
 }: {
   item: BannerItem;
-  onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
@@ -136,22 +173,11 @@ function BannerCard({
             fill
             className="object-contain p-6"
             sizes="(max-width: 1280px) 33vw, 420px"
-            priority={false}
           />
         </div>
 
         <div className="mt-5 flex items-end justify-end gap-4">
-          <button
-            type="button"
-            onClick={onEdit}
-            className={cx(
-              'h-[38px] w-[110px] rounded-[10px] text-[16px] font-semibold text-white',
-              'shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition active:scale-[0.99]',
-              EDIT_GRADIENT
-            )}
-          >
-            Edit
-          </button>
+
 
           <button
             type="button"
@@ -170,101 +196,125 @@ function BannerCard({
   );
 }
 
-function UploadCard({
-  onFiles,
+/* ------------------------------------------------------------------ */
+/* Add Banner Modal (minimal, no design system dependency)             */
+/* ------------------------------------------------------------------ */
+
+function AddBannerModal({
+  open,
+  onClose,
+  onCreated,
 }: {
-  onFiles: (files: File[]) => void;
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void | Promise<void>;
 }) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [drag, setDrag] = useState(false);
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState('home_slider');
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
 
-  const openPicker = () => inputRef.current?.click();
+  useEffect(() => {
+    if (!open) return;
+    setTitle('');
+    setType('home_slider');
+    setFile(null);
+    setErr('');
+    setSaving(false);
+  }, [open]);
 
-  const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    onFiles(files);
-    e.target.value = '';
+  const submit = async () => {
+    setErr('');
+
+    if (!title.trim()) return setErr('Title is required');
+    if (!type.trim()) return setErr('Type is required');
+    if (!file) return setErr('Image is required');
+    if (!isImageFile(file)) return setErr('Only PNG/JPG/WEBP allowed');
+
+    const fd = new FormData();
+    fd.set('title', title.trim());
+    fd.set('type', type.trim());
+    fd.set('image', file);
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/banners', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: fd,
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setErr(data?.message ?? 'Failed to create banner');
+        return;
+      }
+
+      await onCreated();
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDrag(false);
-    const files = Array.from(e.dataTransfer.files ?? []);
-    onFiles(files);
-  };
-
-  const dashedClass = useMemo(
-    () =>
-      cx(
-        'rounded-[16px] border-2 border-dashed',
-        drag ? 'border-[#0B8B4B] bg-[#EAFBF2]' : 'border-[#17B07A]'
-      ),
-    [drag]
-  );
+  if (!open) return null;
 
   return (
-    <CardShell>
-      <div className="rounded-[18px] bg-white/85 p-4 shadow-[0_14px_30px_rgba(0,0,0,0.12)]">
-        <div
-          className={cx(
-            'flex min-h-[360px] flex-col items-center justify-center px-6 text-center',
-            dashedClass
-          )}
-          onDragEnter={() => setDrag(true)}
-          onDragLeave={() => setDrag(false)}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={onDrop}
-          role="button"
-          tabIndex={0}
-          onClick={openPicker}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') openPicker();
-          }}
-        >
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[12px] bg-[#1B7B3C]/10">
-            <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                fill="none"
-                stroke="#1B7B3C"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M7 10l5-5 5 5"
-                fill="none"
-                stroke="#1B7B3C"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M12 5v10"
-                fill="none"
-                stroke="#1B7B3C"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-
-          <p className="text-[14px] font-medium text-[#1B7B3C]">
-            Choose images or drag &amp; drop it here.
-          </p>
-          <p className="mt-1 text-[11px] text-[#7B8EA3]">
-            JPG, JPEG, PNG and WEBP. Max 20 MB.
-          </p>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-[520px] rounded-[16px] bg-white p-5 shadow-[0_22px_55px_rgba(0,0,0,0.25)]">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[16px] font-semibold text-[#133374]">Add New Banner</h3>
+          <button type="button" onClick={onClose} className="text-sm text-[#7B8EA3]">
+            Close
+          </button>
         </div>
 
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          multiple
-          className="hidden"
-          onChange={handlePick}
-        />
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="mb-1 block text-[12px] text-[#7B8EA3]">Title</label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="h-10 w-full rounded-md border px-3 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[12px] text-[#7B8EA3]">Type</label>
+            <input
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="h-10 w-full rounded-md border px-3 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[12px] text-[#7B8EA3]">Image</label>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm"
+            />
+          </div>
+
+          {err && <p className="text-[12px] text-red-600">{err}</p>}
+
+          <div className="mt-4 flex justify-end gap-3">
+            <button type="button" onClick={onClose} disabled={saving} className="h-10 rounded-md border px-4 text-sm">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={saving}
+              className={cx('h-10 rounded-md px-4 text-sm font-semibold text-white', EDIT_GRADIENT, saving && 'opacity-70')}
+            >
+              {saving ? 'Saving...' : 'Create'}
+            </button>
+          </div>
+        </div>
       </div>
-    </CardShell>
+    </div>
   );
 }

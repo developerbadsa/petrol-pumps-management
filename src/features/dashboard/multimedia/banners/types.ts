@@ -1,7 +1,13 @@
-import {StaticImageData} from 'next/image';
+export type BannerApiRow = {
+  id: number;
+  title?: string | null;
+  image?: string | null; // usually "/storage/..."
+  type?: string | null;
+};
 
 export type BannerItem = {
-   id: string;
-   title?: string;
-   imageSrc: string | StaticImageData;
+  id: number;
+  title?: string;
+  imageSrc: string; // always string URL (absolute)
+  type?: string;
 };
