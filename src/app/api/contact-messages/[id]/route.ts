@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server';
 import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+type Ctx = { params: Promise<{ id: string }> | { id: string } };
+
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const { id } = await Promise.resolve(ctx.params);
+
+  if (!id) {
+    return NextResponse.json(
+      { message: 'Missing message id', errors: null },
+      { status: 400 }
+    );
+  }
+
   try {
-    await laravelFetch(`/contact-messages/${params.id}`, {
+    await laravelFetch(`/contact-messages/${id}`, {
       method: 'DELETE',
       auth: true,
     });

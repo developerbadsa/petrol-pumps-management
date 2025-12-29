@@ -13,9 +13,9 @@ export default function ContactPage() {
             height='compact'
          />
 
-<div className="lpg-container">
-           <ContactUsWithForm />
-</div>
+         <div className='lpg-container'>
+            <ContactUsWithForm />
+         </div>
 
          <Footer />
       </div>
