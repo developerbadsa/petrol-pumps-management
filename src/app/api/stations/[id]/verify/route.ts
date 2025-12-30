@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { laravelFetch } from '@/lib/http/laravelFetch';
 
-export async function POST(_: Request, { params }: { params: { id: string } }) {
-  // 1) Read gas-station details to discover owner id
-  const station = await laravelFetch<any>(`/gas-stations/${params.id}`, {
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function POST(_req: NextRequest, ctx: Ctx) {
+  const { id } = await ctx.params;
+
+  // 1) Read gas station details to find station owner id
+  const station = await laravelFetch<any>(`/gas-stations/${id}`, {
     method: 'GET',
     auth: true,
   });
@@ -25,8 +29,8 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
     return NextResponse.json(data);
   }
 
-  // 3) Fallback: mark station verified if backend uses station-level flag
-  const data = await laravelFetch<any>(`/gas-stations/${params.id}?_method=PUT`, {
+  // 3) Fallback: verify station itself (if backend uses station-level status)
+  const data = await laravelFetch<any>(`/gas-stations/${id}?_method=PUT`, {
     method: 'POST',
     auth: true,
     body: JSON.stringify({ verification_status: 'verified', is_verified: true }),
