@@ -9,134 +9,152 @@ import {useRegisterOwner} from './queries';
 const BRAND = '#009970';
 
 export default function RegisterOwnerSection() {
-  const registerM = useRegisterOwner();
+   const registerM = useRegisterOwner();
 
-  const form = useForm<RegisterOwnerInput>({
-    resolver: zodResolver(registerOwnerSchema),
-    defaultValues: {
-      stationOwnerName: '',
-      email: '',
-      phone: '',
-      password: '',
-      confirmPassword: '',
-      residentialAddress: '',
-    },
-  });
+   const form = useForm<RegisterOwnerInput>({
+      resolver: zodResolver(registerOwnerSchema),
+      defaultValues: {
+         stationOwnerName: '',
+         email: '',
+         phone: '',
+         password: '',
+         confirmPassword: '',
+         residentialAddress: '',
+      },
+   });
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    await registerM.mutateAsync(values);
-    form.reset();
-  });
+   const onSubmit = form.handleSubmit(async values => {
+      try {
+         await registerM.mutateAsync(values);
+         form.reset();
+      } catch (e: any) {
+         const msg = e?.message ?? 'Failed to register';
 
-  return (
-    <section className="space-y-6">
-      <h2 className="text-center text-[16px] font-semibold text-[#2B3A4A]">
-        Register a New Station Owner
-      </h2>
+         // common Laravel messages
+         if (/email/i.test(msg)) form.setError('email', {message: msg});
+         else if (/phone/i.test(msg)) form.setError('phone', {message: msg});
+         else form.setError('stationOwnerName', {message: msg});
+      }
+   });
 
-      <div className="mx-auto w-full max-w-[640px] overflow-hidden rounded-[10px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.12)]">
-        {/* Header bar */}
-        <div className="h-[58px] w-full bg-[var(--brand)] text-white">
-          <div className="grid h-full place-items-center text-[16px] font-semibold">
-            Register
-          </div>
-        </div>
+   return (
+      <section className='space-y-6'>
+         <h2 className='text-center text-[16px] font-semibold text-[#2B3A4A]'>
+            Register a New Station Owner
+         </h2>
 
-        <form
-          onSubmit={onSubmit}
-          className="px-10 pb-10 pt-8"
-          style={{['--brand' as any]: BRAND}}
-        >
-          <div className="space-y-4">
-            <FieldRow label="Station Owner Name" error={form.formState.errors.stationOwnerName?.message}>
-              <input
-                className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
-                {...form.register('stationOwnerName')}
-              />
-            </FieldRow>
+         <div className='mx-auto w-full max-w-[640px] overflow-hidden rounded-[10px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.12)]'>
+            {/* Header bar */}
+            <div className='h-[58px] w-full bg-[var(--brand)] text-white'>
+               <div className='grid h-full place-items-center text-[16px] font-semibold'>
+                  Register
+               </div>
+            </div>
 
-            <FieldRow label="E-Mail Address" error={form.formState.errors.email?.message}>
-              <input
-                className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
-                {...form.register('email')}
-              />
-            </FieldRow>
+            <form
+               onSubmit={onSubmit}
+               className='px-10 pb-10 pt-8'
+               style={{['--brand' as any]: BRAND}}>
+               <div className='space-y-4'>
+                  <FieldRow
+                     label='Station Owner Name'
+                     error={form.formState.errors.stationOwnerName?.message}>
+                     <input
+                        className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]'
+                        {...form.register('stationOwnerName')}
+                     />
+                  </FieldRow>
 
-            <FieldRow label="Phone" error={form.formState.errors.phone?.message}>
-              <input
-                className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
-                {...form.register('phone')}
-              />
-            </FieldRow>
+                  <FieldRow
+                     label='E-Mail Address'
+                     error={form.formState.errors.email?.message}>
+                     <input
+                        className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]'
+                        {...form.register('email')}
+                     />
+                  </FieldRow>
 
-            <FieldRow label="Password" error={form.formState.errors.password?.message}>
-              <input
-                type="password"
-                className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
-                {...form.register('password')}
-              />
-            </FieldRow>
+                  <FieldRow
+                     label='Phone'
+                     error={form.formState.errors.phone?.message}>
+                     <input
+                        className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]'
+                        {...form.register('phone')}
+                     />
+                  </FieldRow>
 
-            <FieldRow label="Confirm Password" error={form.formState.errors.confirmPassword?.message}>
-              <input
-                type="password"
-                className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
-                {...form.register('confirmPassword')}
-              />
-            </FieldRow>
+                  <FieldRow
+                     label='Password'
+                     error={form.formState.errors.password?.message}>
+                     <input
+                        type='password'
+                        className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]'
+                        {...form.register('password')}
+                     />
+                  </FieldRow>
 
-            <FieldRow
-              label="Residential Address"
-              error={form.formState.errors.residentialAddress?.message}
-            >
-              <input
-                className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
-                {...form.register('residentialAddress')}
-              />
-            </FieldRow>
-          </div>
+                  <FieldRow
+                     label='Confirm Password'
+                     error={form.formState.errors.confirmPassword?.message}>
+                     <input
+                        type='password'
+                        className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]'
+                        {...form.register('confirmPassword')}
+                     />
+                  </FieldRow>
 
-          <div className="mt-8 flex justify-center">
-            <button
-              type="submit"
-              disabled={registerM.isPending}
-              className="h-9 rounded-full bg-[#009970] px-12 text-[12px] font-semibold text-white shadow-sm transition hover:brightness-110 active:brightness-95 disabled:opacity-60"
-            >
-              {registerM.isPending ? 'Registering...' : 'Register'}
-            </button>
-          </div>
+                  <FieldRow
+                     label='Residential Address'
+                     error={form.formState.errors.residentialAddress?.message}>
+                     <input
+                        className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]'
+                        {...form.register('residentialAddress')}
+                     />
+                  </FieldRow>
+               </div>
 
-          <div className="mt-6 text-center text-[11px] text-[#6F8093]">
-            Not registered yet?{' '}
-            <span className="cursor-pointer text-[#009970]">
-              Register Now →
-            </span>
-          </div>
-        </form>
-      </div>
-    </section>
-  );
+               <div className='mt-8 flex justify-center'>
+                  <button
+                     type='submit'
+                     disabled={registerM.isPending}
+                     className='h-9 rounded-full bg-[#009970] px-12 text-[12px] font-semibold text-white shadow-sm transition hover:brightness-110 active:brightness-95 disabled:opacity-60'>
+                     {registerM.isPending ? 'Registering...' : 'Register'}
+                  </button>
+               </div>
+
+               <div className='mt-6 text-center text-[11px] text-[#6F8093]'>
+                  Not registered yet?{' '}
+                  <span className='cursor-pointer text-[#009970]'>
+                     Register Now →
+                  </span>
+               </div>
+            </form>
+         </div>
+      </section>
+   );
 }
 
 function FieldRow({
-  label,
-  children,
-  error,
+   label,
+   children,
+   error,
 }: {
-  label: string;
-  children: React.ReactNode;
-  error?: string;
+   label: string;
+   children: React.ReactNode;
+   error?: string;
 }) {
-  return (
-    <div className="grid items-center gap-3 md:grid-cols-[190px_1fr]">
-      <div className="text-[11px] font-semibold text-[#2B3A4A] md:text-right">
-        {label}
-      </div>
+   return (
+      <div className='grid items-center gap-3 md:grid-cols-[190px_1fr]'>
+         <div className='text-[11px] font-semibold text-[#2B3A4A] md:text-right'>
+            {label}
+         </div>
 
-      <div>
-        {children}
-        {error ? <div className="mt-1 text-[11px] text-red-600">{error}</div> : null}
+         <div>
+            {children}
+            {error ? (
+               <div className='mt-1 text-[11px] text-red-600'>{error}</div>
+            ) : null}
+         </div>
       </div>
-    </div>
-  );
+   );
 }

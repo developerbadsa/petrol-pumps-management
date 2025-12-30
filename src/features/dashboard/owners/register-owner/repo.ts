@@ -2,14 +2,20 @@ import type { RegisterOwnerInput, RegisterOwnerResult } from './types';
 
 async function readJsonOrThrow(res: Response) {
   const data = await res.json().catch(() => null);
+
   if (!res.ok) {
     const msg =
       data?.message ||
       (data?.errors ? Object.values(data.errors).flat().join(' ') : null) ||
       res.statusText ||
       'Request failed';
-    throw new Error(msg);
+
+    const err: any = new Error(msg);
+    err.status = res.status;
+    err.errors = data?.errors ?? null;
+    throw err;
   }
+
   return data;
 }
 
@@ -22,8 +28,9 @@ export async function registerOwnerRepo(input: RegisterOwnerInput): Promise<Regi
 
   const data = await readJsonOrThrow(res);
 
-  const ownerId =
-    data?.station_owner?.id ?? data?.station_owner?.data?.id ?? data?.station_owner?.station_owner?.id;
+  // API route returns { id, owner }
+  const id = data?.id ?? data?.owner?.id ?? data?.owner?.station_owner?.id;
+  if (!id) throw new Error('Registration succeeded but id missing');
 
-  return { id: String(ownerId ?? data?.user?.id ?? '') };
+  return { id: String(id) };
 }
