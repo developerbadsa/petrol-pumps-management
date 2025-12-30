@@ -1,4 +1,4 @@
-// src/features/stations/verified/types.ts
+
 export type VerifiedStationRow = {
   id: string;
   sl: number;

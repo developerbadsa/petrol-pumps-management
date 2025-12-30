@@ -1,7 +1,9 @@
 // src/features/stations/verified/VerifiedStationsTable.tsx
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Database, Eye, Pencil, FileText } from 'lucide-react';
 
 import TablePanel from '@/components/ui/table-panel/TablePanel';
@@ -10,8 +12,7 @@ import { exportRowsToCsv } from '@/components/ui/table-panel/exportCsv';
 
 import type { VerifiedStationRow } from './types';
 import { useVerifiedStations } from './queries';
-
-const BRAND = '#009970';
+import { getStationDetailsRepo } from './repo';
 
 function cx(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ');
@@ -20,12 +21,14 @@ function cx(...v: Array<string | false | null | undefined>) {
 function IconDot({
   title,
   onClick,
+  onMouseEnter,
   bg,
   disabled,
   children,
 }: {
   title: string;
   onClick: () => void;
+  onMouseEnter?: () => void;
   bg: string;
   disabled?: boolean;
   children: React.ReactNode;
@@ -36,6 +39,7 @@ function IconDot({
       title={title}
       aria-label={title}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
       disabled={disabled}
       className={cx(
         'grid h-5 w-5 place-items-center rounded-full shadow-sm',
@@ -50,6 +54,42 @@ function IconDot({
 
 export default function VerifiedStationsTable() {
   const q = useVerifiedStations();
+
+  const router = useRouter();
+  const qc = useQueryClient();
+
+  const prefetchDetails = useCallback(
+    async (id: string) => {
+      await qc.prefetchQuery({
+        queryKey: ['stations', 'details', id],
+        queryFn: () => getStationDetailsRepo(id),
+        staleTime: 30_000, // cache for 30s; tweak as needed
+      });
+    },
+    [qc]
+  );
+
+  const goView = useCallback(
+    async (id: string) => {
+      try {
+        await prefetchDetails(id);
+      } catch {
+        // If prefetch fails, still navigate; manage page can refetch.
+      }
+      router.push(`/manage-stations?mode=view&id=${encodeURIComponent(id)}`);
+    },
+    [prefetchDetails, router]
+  );
+
+  const goEdit = useCallback(
+    async (id: string) => {
+      try {
+        await prefetchDetails(id);
+      } catch {}
+      router.push(`/manage-stations?mode=edit&id=${encodeURIComponent(id)}`);
+    },
+    [prefetchDetails, router]
+  );
 
   const columns = useMemo<ColumnDef<VerifiedStationRow>[]>(() => {
     return [
@@ -170,10 +210,8 @@ export default function VerifiedStationsTable() {
           <div className="flex items-center justify-center gap-2">
             <IconDot
               title="View station"
-              onClick={() => {
-                // Hook later: open view modal / route
-                console.log('view', r.id);
-              }}
+              onMouseEnter={() => prefetchDetails(r.id)}
+              onClick={() => goView(r.id)}
               bg="bg-[#6D6DFF]"
             >
               <Eye size={12} className="text-white" />
@@ -181,10 +219,8 @@ export default function VerifiedStationsTable() {
 
             <IconDot
               title="Edit station"
-              onClick={() => {
-                // Hook later: open edit modal / route
-                console.log('edit', r.id);
-              }}
+              onMouseEnter={() => prefetchDetails(r.id)}
+              onClick={() => goEdit(r.id)}
               bg="bg-[#F59E0B]"
             >
               <Pencil size={12} className="text-white" />
@@ -193,7 +229,7 @@ export default function VerifiedStationsTable() {
         ),
       },
     ];
-  }, []);
+  }, [goEdit, goView, prefetchDetails]);
 
   if (q.isLoading) return <div className="text-sm text-slate-600">Loading...</div>;
   if (q.isError) return <div className="text-sm text-red-600">Failed to load stations.</div>;

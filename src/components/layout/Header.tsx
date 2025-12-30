@@ -82,7 +82,6 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
 
    const closeDropdowns = () => setOpenDropdownKey(null);
 
-   console.log(isLoggedIn, user, logout, loading);
 
    return (
       <>

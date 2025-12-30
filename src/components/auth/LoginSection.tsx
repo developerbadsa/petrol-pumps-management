@@ -456,11 +456,7 @@ export default function LoginSection() {
                                  Go to Dashboard
                               </button>
 
-                              <Link
-                                 href='/'
-                                 className='inline-flex h-8 items-center justify-center rounded-full border border-black/10 bg-white px-6 text-[10px] font-semibold text-[#2B3A4A] shadow-sm transition hover:bg-black/5'>
-                                 Home
-                              </Link>
+                        
                            </div>
                         </div>
                      )}
