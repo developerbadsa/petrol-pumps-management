@@ -17,8 +17,8 @@ type PageHeroProps = {
 };
 
 const heightClass: Record<NonNullable<PageHeroProps['height']>, string> = {
-   full: 'h-[800px]',
-   compact: 'h-[600px] ',
+   full: 'min-h-[560px] md:min-h-[680px] lg:min-h-[800px]',
+   compact: 'min-h-[420px] md:min-h-[520px] lg:min-h-[600px]',
 };
 
 export default function PageHero({
@@ -32,7 +32,7 @@ export default function PageHero({
    overlayFrom = 'down',
 }: PageHeroProps) {
    return (
-      <div className={`relative w-full ${heightClass[height]} `}>
+      <div className={`relative w-full ${heightClass[height]}`}>
          <Image
             src={backgroundImage}
             alt='Page hero background'
@@ -51,7 +51,7 @@ export default function PageHero({
          {showHeader && <Header heroSize={heightClass[height]} />}
 
          {/* content */}
-         <div className='relative flex flex-col items-center  justify-center px-4 text-center text-white h-[70%] pb-6 '>
+         <div className='relative flex min-h-[70%] flex-col items-center justify-center px-4 pb-6 text-center text-white'>
             <h1 className='text-[32px] md:text-[38px] lg:text-[48px] font-bold leading-tight tracking-[-0.04em] mb-12'>
                {title}
             </h1>

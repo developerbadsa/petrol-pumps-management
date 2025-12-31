@@ -34,10 +34,15 @@ body {
 }
 
 .lpg-container {
-   max-width: 83%;
-   /* width: 1440px; */
+   width: min(100%, 1280px);
    margin: 0 auto;
    padding: 0 1rem;
+}
+
+@media (min-width: 1024px) {
+   .lpg-container {
+      width: min(83%, 1280px);
+   }
 }
 
 .btn-bg {

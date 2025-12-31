@@ -166,18 +166,18 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
             />
          )}
 
-         <header className='relative z-20 flex justify-center py-10 pt-[80px]'>
+         <header className='relative z-20 flex justify-center py-6 pt-[70px] md:py-10 md:pt-[80px]'>
             {/* IMPORTANT: overflow-visible so dropdown isn't clipped */}
-            <div className='relative flex h-[85px] w-full items-center justify-between rounded-full bg-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur lpg-container overflow-visible'>
+            <div className='relative flex h-[70px] w-full items-center justify-between rounded-full bg-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur lpg-container overflow-visible md:h-[85px]'>
                <Link
                   href='/'
-                  className='absolute left-0 flex h-full w-[175px] items-center justify-center rounded-l-full bg-[#EEF0FB]'>
-                  <div className='relative h-[82px] w-[82px] overflow-hidden rounded-full scale-[1.5]'>
+                  className='absolute left-0 flex h-full w-[120px] items-center justify-center rounded-l-full bg-[#EEF0FB] md:w-[175px]'>
+                  <div className='relative h-[62px] w-[62px] overflow-hidden rounded-full md:h-[82px] md:w-[82px] md:scale-[1.5]'>
                      <Logo />
                   </div>
                </Link>
 
-               <div className='ml-16 flex flex-1 items-center justify-between gap-6 overflow-visible '>
+               <div className='ml-12 flex flex-1 items-center justify-between gap-6 overflow-visible md:ml-16'>
                   <nav className='hidden flex-1 items-center justify-end lg:gap-2 lg:flex  xl:gap-4 overflow-visible'>
                      {MAIN_NAV.map(item => {
                         const hasChildren = !!item.children?.length;
