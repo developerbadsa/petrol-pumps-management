@@ -140,7 +140,7 @@ export default function CentralCommitteeSection() {
       <section className='relative bg-[#F4F9F4] py-16'>
          {/* side background glows */}
          <div className='pointer-events-none absolute -left-24 top-[120px] h-[260px] w-[260px] rounded-[40px] bg-[radial-gradient(circle_at_center,_#D5E6FF66,_transparent_70%)]' />
-         <div className='pointer-events-none absolute right-[-40px] bottom-[80px] h-[260px] w-[260px] rounded-[40px] bg-[radial-gradient(circle_at_center,_#E1F4E880,_transparent_70%)]' />
+         {/* <div className='pointer-events-none absolute right-[-40px] bottom-[80px] h-[260px] w-[260px] rounded-[40px] bg-[radial-gradient(circle_at_center,_#E1F4E880,_transparent_70%)]' /> */}
 
          <div className='lpg-container relative'>
             <SectionHeading
