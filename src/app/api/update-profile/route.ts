@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const data = await laravelFetch('/update-profile', {
       method: 'POST',
       auth: true,
-     body: JSON.stringify(body),
+      body: JSON.stringify(body),
     });
 
     return NextResponse.json(data, { status: 200 });

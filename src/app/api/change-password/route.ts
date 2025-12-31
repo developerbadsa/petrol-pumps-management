@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const data = await laravelFetch('/change-password', {
       method: 'POST',
       auth: true,
-      body,
+      body: JSON.stringify(body),
     });
 
     return NextResponse.json(data, { status: 200 });

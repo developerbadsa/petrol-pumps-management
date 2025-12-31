@@ -67,6 +67,7 @@ export async function laravelFetch<T>(
 
    const res = await fetch(url, {
       ...init,
+      body: init.body,
       headers,
       cache: init.cache ?? 'no-store',
    });
