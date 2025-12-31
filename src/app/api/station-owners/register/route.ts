@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     // 2) create station owner record (admin auth)
     const owner = await laravelFetch<any>('/station-owners', {
       method: 'POST',
-      auth: true,
+      auth: false,
       body: JSON.stringify({
         user_id: userId,
         address: body.residentialAddress?.trim(),

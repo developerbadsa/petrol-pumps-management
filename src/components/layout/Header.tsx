@@ -20,7 +20,7 @@ const MAIN_NAV: NavItem[] = [
    {
       key: 'gallery',
       label: 'GALLERY',
-      href: '/gallery',
+      href: '#',
       children: [
          // { label: 'PHOTO', href: '/gallery/photo' },
          {label: 'PRINT MEDIA', href: '/gallery/print-media-gallery'},
@@ -31,7 +31,7 @@ const MAIN_NAV: NavItem[] = [
    {
       key: 'committee',
       label: 'COMMITTEE',
-      href: '/committee',
+      href: '#',
       children: [
          {label: 'ADVISORS', href: '/committee/advisors'},
          {label: 'CENTRAL COMMITTEE', href: '/committee/central-committee'},
@@ -41,7 +41,7 @@ const MAIN_NAV: NavItem[] = [
    {
       key: 'stations',
       label: 'MEMBER STATIONS',
-      href: '/members',
+      href: '#',
       children: [
          {label: 'Member List', href: '/members/all-members'},
          {label: 'Running LPG Stations', href: '/members/running-stations'},
@@ -183,7 +183,6 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
                         const hasChildren = !!item.children?.length;
                         const isDropdownOpen = openDropdownKey === item.key;
                         const active = isActive(item.href);
-
                         return (
                            <div
                               key={item.key}
@@ -195,7 +194,7 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
                                  hasChildren && scheduleCloseDropdowns()
                               }>
                               <Link
-                                 href={'#'}
+                                 href={item.href}
                                  aria-haspopup={
                                     hasChildren ? 'menu' : undefined
                                  }
