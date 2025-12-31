@@ -35,7 +35,7 @@ export default function Home() {
 
 
          <ServicesSection />
-         {/* <CentralCommitteeSection /> */}
+         <CentralCommitteeSection />
 
 
          <ContactUsSection />
