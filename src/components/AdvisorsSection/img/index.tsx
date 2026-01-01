@@ -1095,79 +1095,83 @@ function AdvisorRow({advisor, reverse}: {advisor: Advisor; reverse?: boolean}) {
    );
 }
 
-/* ------------------------- mock data ------------------------- */
 
-import advisor1 from './img/advisor1.png';
-import advisor2 from './img/advisor1.png';
-import advisor3 from './img/advisor1.png';
-import advisor4 from './img/advisor1.png';
+import advisor1 from './Motalab.jpg';
+import advisor2 from './monir.jpg';
+import advisor3 from './engr-saidul.jpg';
+import advisor4 from './Prof. shazzad-NSU.jpg';
 import {JSX} from 'react';
 
-const DEFAULT_RESP: string[] = [
-   'Addressing all matters related to national LPG policy.',
-   'Ensuring safety standards for LPG autogas stations.',
-   'Overseeing safety protocols for LPG conversion workshops.',
-   'Working on the standardization of LPG equipment and components.',
-   'Monitoring the quality and compliance of LPG sector technologies.',
-   'Ensuring accurate and transparent measurement systems for LPG supply.',
-   'Providing guidelines for domestic production of LPG sector equipment.',
-   'Promoting the use of local technology to reduce import dependency.',
-   'Supporting innovation in LPG safety and operational practices.',
-   'Facilitating communication between LPG businesses and government bodies.',
-   'Encouraging training and skill development for LPG sector workers.',
-   'Overseeing safety protocols for LPG conversion workshops.',
-   'Working on the standardization of LPG equipment and components.',
-   'Monitoring the quality and compliance of LPG sector technologies.',
-   'Ensuring accurate and transparent measurement systems for LPG supply.',
-   'Providing guidelines for domestic production of LPG sector equipment.',
-   'Promoting the use of local technology to reduce import dependency.',
-   'Supporting innovation in LPG safety and operational practices.',
-   'Facilitating communication between LPG businesses and government bodies.',
-   'Encouraging training and skill development for LPG sector workers.',
+const ADVISORS: Advisor[] = [
+  {
+    id: 'adv-1',
+    name: 'Dr. Mohammad A. Motalab',
+    titleLines: [
+      { name: 'Professor', icon: CapIcon },
+      { name: 'Dept. of Mechanical Engineering, BUET', icon: BagIcon },
+    ],
+    photo: advisor1,
+    responsibilities: [
+      'Issues related to LPG policy.',
+      'Safety issues of LPG autogas stations and conversion workshops.',
+      'Issues related to standardization of various equipment used in the LPG sector.',
+      'Accurate measurement issues in case of LPG supply.',
+      'Guidelines for domestic production used in the LPG sector utilising our domestic technology in order to reduce import dependency.',
+      'Trying as much as possible for other necessities.',
+    ],
+  },
+
+  {
+    id: 'adv-2',
+    name: 'Engr. Md. Moniruzzaman',
+    titleLines: [
+      { name: 'Member, Board of Directors', icon: CapIcon },
+      { name: 'Central Council Member (IEB)', icon: BagIcon },
+    ],
+    photo: advisor2, // set your 2nd image
+    responsibilities: [
+      'Government policy formulation, amendment etc.',
+      'Safety issues of LPG autogas stations and conversion workshops.',
+      'Discussion with the government on issues of interest to the LPG sector.',
+      'Things to do to expand LPG business.',
+      'Try as much as possible for other necessities.',
+    ],
+  },
+
+  {
+    id: 'adv-3',
+    name: 'Engr. Mohammed Saidul Islam',
+    titleLines: [
+      { name: 'Chairman, Advanced Equipment Limited', icon: CapIcon },
+    ],
+    photo: advisor3, // set your 3rd image
+    responsibilities: [
+      'On the matters of policy making of the association.',
+      'Negotiations with LPG operators on purchase-selling price and other related matters.',
+      'Safety issues of the members of the association.',
+      'Issues related to LPG purchase (local / international).',
+      'Negotiations with the government on issues of interest to the LPG sector.',
+      'Try as much as possible for other necessities.',
+    ],
+  },
+
+  {
+    id: 'adv-4',
+    name: 'Dr. Shazzad Hosain',
+    titleLines: [
+      { name: 'Professor, ECE Department, NSU', icon: CapIcon },
+      { name: 'PhD in Computer Science, Wayne State University, USA', icon: BagIcon },
+      { name: 'MSc Eng. from BUET', icon: BagIcon },
+    ],
+    photo: advisor4, // set your 4th image
+    responsibilities: [
+      'Providing advice on technological solutions on purchase & delivery of LPG autogas.',
+      'Automation planning for autogas services with minimal human intervention.',
+      'Analyzing and determining security threats.',
+    ],
+  },
 ];
 
-const MOCK_ADVISORS: Advisor[] = [
-   {
-      id: 'adv-1',
-      name: 'DR. MOHAMMAD A. MOTALAB',
-      titleLines: [
-         {name: 'Professor', icon: CapIcon},
-         {name: 'Dept. of Mechanical Engineering, BUET', icon: BagIcon},
-      ],
-      photo: advisor1,
-      responsibilities: DEFAULT_RESP,
-   },
-   {
-      id: 'adv-2',
-      name: 'MR. FIRSTNAME LASTNAME',
-      titleLines: [
-         {name: 'Professor', icon: BagIcon},
-         {name: 'Dept. of Mechanical Engineering, BUET', icon: CapIcon},
-      ],
-      photo: advisor2,
-      responsibilities: DEFAULT_RESP,
-   },
-   {
-      id: 'adv-3',
-      name: 'ENGR. FIRSTNAME LASTNAME',
-      titleLines: [
-         {name: 'Professor', icon: BagIcon},
-         {name: 'Dept. of Mechanical Engineering, BUET', icon: CapIcon},
-      ],
-      photo: advisor3,
-      responsibilities: DEFAULT_RESP,
-   },
-   {
-      id: 'adv-4',
-      name: 'MR. FIRSTNAME LASTNAME',
-      titleLines: [
-         {name: 'Professor', icon: BagIcon},
-         {name: 'Dept. of Mechanical Engineering, BUET', icon: CapIcon},
-      ],
-      photo: advisor4,
-      responsibilities: DEFAULT_RESP,
-   },
-];
 
 /* ------------------------- section ------------------------- */
 
@@ -1191,7 +1195,7 @@ export default function AdvisorsSection() {
             </div>
 
             <div className='mt-10 space-y-14'>
-               {MOCK_ADVISORS.map((a, idx) => (
+               {ADVISORS.map((a, idx) => (
                   <AdvisorRow key={a.id} advisor={a} reverse={idx % 2 === 1} />
                ))}
             </div>
