@@ -1,168 +1,458 @@
 'use client';
 
-import {useState} from 'react';
+import Link from 'next/link';
+import {useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/navigation';
+import MeshCorners from '@/components/ui/MeshCorners';
 import {useAuth} from '@/features/auth/AuthProvider';
 
-const flowerIcon = (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 28 28"
-    className="h-6 w-6 text-[#F47B20]">
-    <path
-      fill="currentColor"
-      d="M14 2.5c1.7 0 3.1 1.4 3.1 3.1 0 .9-.4 1.8-1 2.4 1.1.1 2.2-.2 3.1-.9 1.4-1.1 3.4-.8 4.5.6 1.1 1.4.8 3.4-.6 4.5-.9.7-2 .9-3.1.8.7.8 1 1.8 1 2.8 0 1.7-1.4 3.1-3.1 3.1-1 0-1.9-.5-2.4-1.2-.2 1.1-.8 2.1-1.7 2.8-1.4 1.1-3.4.8-4.5-.6-1.1-1.4-.8-3.4.6-4.5.9-.7 2-1 3.1-.9-.7-.8-1-1.8-1-2.8 0-1.7 1.4-3.1 3.1-3.1 1 0 1.9.5 2.4 1.2.2-1.1.8-2.1 1.7-2.8.5-.4 1.1-.7 1.7-.8-.8-.5-1.4-1.4-1.4-2.4C10.9 3.9 12.3 2.5 14 2.5z"
-    />
-  </svg>
-);
+type Step = 'PHONE' | 'OTP' | 'CREDS' | 'DONE';
+
+type OtpMeta = {
+   requestId: string;
+   sentAt: number; // ms
+};
+
+const OTP_LENGTH = 4;
+const RESEND_SECONDS = 30;
+
+// Mock API (replace later with real OTP endpoints)
+async function requestOtpApi(phone: string): Promise<{requestId: string}> {
+   await new Promise(r => setTimeout(r, 650));
+   return {
+      requestId: `req_${phone.replace(/\D/g, '').slice(-6)}_${Date.now()}`,
+   };
+}
+
+// For testing: accept "1234"
+async function verifyOtpApi(args: {
+   requestId: string;
+   phone: string;
+   otp: string;
+}): Promise<{ok: true}> {
+   await new Promise(r => setTimeout(r, 450));
+   if (args.otp !== '1234') throw new Error('Invalid OTP');
+   return {ok: true};
+}
+
+function cx(...v: Array<string | false | null | undefined>) {
+   return v.filter(Boolean).join(' ');
+}
+
+function onlyDigits(s: string) {
+   return s.replace(/\D/g, '');
+}
+
+function maskPhone(p: string) {
+   const d = onlyDigits(p);
+   if (d.length <= 4) return d;
+   return `${d.slice(0, 3)}******${d.slice(-2)}`;
+}
+
+function isValidPhone(p: string) {
+   const d = onlyDigits(p);
+   // keeps it flexible (BD or intl). tighten later if needed.
+   return d.length >= 10 && d.length <= 14;
+}
 
 export default function LoginSection() {
-  const router = useRouter();
-  const {refresh} = useAuth();
+   const router = useRouter();
 
-  const [loginId, setLoginId] = useState('');
-  const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+   const [step, setStep] = useState<Step>('PHONE');
+   const [phone, setPhone] = useState('');
+   const [otp, setOtp] = useState('');
+   const [meta, setMeta] = useState<OtpMeta | null>(null);
+   const [password, setPassword] = useState('');
 
-  const canSubmit = Boolean(loginId.trim()) && Boolean(password) && !pending;
+   const [pending, setPending] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+   const {refresh} = useAuth();
 
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
+   const [now, setNow] = useState(() => Date.now());
+   useEffect(() => {
+      if (step !== 'OTP' || !meta) return;
+      const t = setInterval(() => setNow(Date.now()), 500);
+      return () => clearInterval(t);
+   }, [step, meta]);
 
-    if (!loginId.trim()) {
-      setError('Please enter your username or email address.');
-      return;
-    }
-    if (!password) {
-      setError('Please enter your password.');
-      return;
-    }
+   const resendLeft = useMemo(() => {
+      if (!meta) return 0;
+      const elapsed = Math.floor((now - meta.sentAt) / 1000);
+      return Math.max(0, RESEND_SECONDS - elapsed);
+   }, [meta, now]);
 
-    setPending(true);
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          email: loginId.trim(),
-          phone_number: loginId.trim(),
-          password,
-          remember,
-        }),
-        credentials: 'include',
-      });
+   const canSendOtp = isValidPhone(phone) && !pending;
+   const canVerify =
+      otp.length === OTP_LENGTH && Boolean(meta?.requestId) && !pending;
 
-      const data = await res.json().catch(() => null);
+   const canLogin = isValidPhone(phone) && password.length >= 4 && !pending;
 
-      if (!res.ok) {
-        const firstFieldError =
-          data?.errors &&
-          Object.values(data.errors)?.[0] &&
-          (Object.values(data.errors)[0] as string[])?.[0];
-
-        throw new Error(firstFieldError || data?.message || 'Login failed');
+   const submitPhone = async () => {
+      setError(null);
+      const p = phone.trim();
+      if (!isValidPhone(p)) {
+         setError('Please enter a valid phone number.');
+         return;
       }
 
-      await refresh();
-      router.replace('/dashboard');
-      router.refresh();
-    } catch (e: any) {
-      setError(e?.message ?? 'Login failed. Please try again.');
-    } finally {
-      setPending(false);
-    }
-  };
+      setPending(true);
+      try {
+         const res = await requestOtpApi(p);
+         setMeta({requestId: res.requestId, sentAt: Date.now()});
+         setOtp('');
+         setStep('OTP');
+      } catch {
+         setError('Failed to send OTP. Please try again.');
+      } finally {
+         setPending(false);
+      }
+   };
 
-  return (
-    <section className="relative flex min-h-[calc(100vh-160px)] items-center justify-center overflow-hidden bg-[#4B4542] px-4 py-16">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.08),transparent_45%)]" />
+   const resendOtp = async () => {
+      if (!isValidPhone(phone) || resendLeft > 0) return;
+      setError(null);
 
-      <div className="relative w-full max-w-[960px]">
-        <div className="grid overflow-hidden rounded-[28px] bg-white shadow-[0_40px_90px_rgba(0,0,0,0.25)] md:grid-cols-[1fr_1.15fr]">
-          <div className="relative min-h-[320px] bg-gradient-to-br from-[#F5D7CB] via-[#F3BFA4] to-[#FF7D3D]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,rgba(255,255,255,0.35),transparent_55%)]" />
-          </div>
+      setPending(true);
+      try {
+         const res = await requestOtpApi(phone.trim());
+         setMeta({requestId: res.requestId, sentAt: Date.now()});
+         setOtp('');
+      } catch {
+         setError('Failed to resend OTP. Please try again.');
+      } finally {
+         setPending(false);
+      }
+   };
 
-          <div className="px-6 py-10 md:px-12 md:py-12">
-            <div className="flex items-center gap-3">
-              {flowerIcon}
-              <h2 className="text-[20px] font-semibold uppercase tracking-[0.08em] text-[#3A3A3A]">
-                Log In
-              </h2>
+   const submitOtp = async () => {
+      if (!meta?.requestId) return;
+
+      setError(null);
+      if (otp.length !== OTP_LENGTH) {
+         setError(`Please enter the ${OTP_LENGTH}-digit OTP.`);
+         return;
+      }
+
+      setPending(true);
+      try {
+         await verifyOtpApi({
+            requestId: meta.requestId,
+            phone: phone.trim(),
+            otp,
+         });
+
+         // After OTP: ask for email + password (backend login requires them)
+         setStep('CREDS');
+      } catch {
+         setError('OTP did not match. Please try again.');
+      } finally {
+         setPending(false);
+      }
+   };
+
+   const submitCreds = async () => {
+      setError(null);
+
+      const p = phone.trim();
+
+      if (!isValidPhone(p)) {
+         setError('Please enter a valid phone number.');
+         return;
+      }
+      if (!password) {
+         setError('Please enter your password.');
+         return;
+      }
+
+      setPending(true);
+      try {
+         const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+               phone_number: p,
+               password,
+            }),
+            credentials: 'include',
+         });
+
+         const data = await res.json().catch(() => null);
+
+         if (!res.ok) {
+            const firstFieldError =
+               data?.errors &&
+               Object.values(data.errors)?.[0] &&
+               (Object.values(data.errors)[0] as string[])?.[0];
+
+            throw new Error(firstFieldError || data?.message || 'Login failed');
+         }
+         await refresh();
+         router.refresh();
+         setStep('DONE');
+      } catch (e: any) {
+         setError(e?.message ?? 'Login failed. Please try again.');
+      } finally {
+         setPending(false);
+      }
+   };
+
+   const goBackToPhone = () => {
+      setError(null);
+      setOtp('');
+      setMeta(null);
+      setStep('PHONE');
+   };
+
+   const goBackToOtp = () => {
+      setError(null);
+      setStep('OTP');
+   };
+
+   return (
+      <section className='relative overflow-hidden bg-[#F4F9F4] py-14'>
+         <div className='bg-red-400'>
+            <MeshCorners
+               className='z-0'
+               color='#2D8A2D'
+               opacity={0.28}
+               width={260}
+               height={480}
+               strokeWidth={1}
+            />
+         </div>
+
+         <div className='pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(900px_520px_at_18%_10%,rgba(45,138,45,0.10),transparent_60%),radial-gradient(900px_520px_at_82%_10%,rgba(45,138,45,0.10),transparent_60%)]' />
+
+         <div className='lpg-container relative z-10'>
+            {/* glass panel like screenshot */}
+            <div className='rounded-[18px] bg-white/45 p-8 shadow-[0_18px_55px_rgba(0,0,0,0.10)] backdrop-blur-sm md:p-12'>
+               <div className='mx-auto w-full max-w-[560px] overflow-hidden rounded-[10px] bg-white shadow-[0_16px_45px_rgba(0,0,0,0.08)]'>
+                  {/* card header */}
+                  <div className='flex h-11 items-center justify-center bg-[#009970]'>
+                     <h3 className='text-[13px] font-semibold text-white'>
+                        Login
+                     </h3>
+                  </div>
+
+                  {/* card body */}
+                  <div className='px-7 py-9 md:px-10'>
+                     {error && (
+                        <div
+                           className='mb-4 rounded-[10px] border border-red-500/15 bg-red-500/5 px-4 py-3 text-[11px] text-red-700'
+                           role='alert'
+                           aria-live='polite'>
+                           {error}
+                        </div>
+                     )}
+
+                     {step === 'PHONE' && (
+                        <div className='space-y-5'>
+                           <div className='flex flex-col items-start justify-center gap-2 sm:flex-row sm:items-center sm:gap-3'>
+                              <label className='w-full text-left text-[10px] text-[#6F8093] sm:w-auto sm:text-right'>
+                                 Phone
+                              </label>
+                              <input
+                                 value={phone}
+                                 onChange={e => setPhone(e.target.value)}
+                                 placeholder=''
+                                 inputMode='tel'
+                                 autoComplete='tel'
+                                 className={cx(
+                                    'h-8 w-full rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] text-[#2B3A4A] outline-none sm:h-7 sm:w-[200px]',
+                                    'focus:border-[#0B8B4B]'
+                                 )}
+                              />
+                           </div>
+
+                           <div className='flex items-center justify-center'>
+                              <button
+                                 type='button'
+                                 onClick={submitPhone}
+                                 disabled={!canSendOtp}
+                                 className={cx(
+                                    'inline-flex h-8 items-center justify-center rounded-full px-6 text-[10px] font-semibold',
+                                    'bg-[#009970] text-white shadow-sm transition hover:brightness-110 active:brightness-95',
+                                    'disabled:opacity-60 disabled:hover:brightness-100'
+                                 )}>
+                                 {pending ? 'Sending...' : 'Send OTP'}
+                              </button>
+                           </div>
+
+                           <p className='text-center text-[10px] text-[#6F8093]'>
+                              Not registered yet?{' '}
+                              <Link
+                                 href='/register'
+                                 className='font-semibold text-[#009970] hover:underline'>
+                                 Register Now →
+                              </Link>
+                           </p>
+                        </div>
+                     )}
+
+                     {step === 'OTP' && (
+                        <div className='space-y-5'>
+                           <p className='text-center text-[11px] text-[#6F8093]'>
+                              OTP sent to{' '}
+                              <span className='font-semibold text-[#133374]'>
+                                 {maskPhone(phone)}
+                              </span>
+                           </p>
+
+                           <div className='flex flex-col items-start justify-center gap-2 sm:flex-row sm:items-center sm:gap-3'>
+                              <label className='w-full text-left text-[10px] text-[#6F8093] sm:w-auto sm:text-right'>
+                                 OTP
+                              </label>
+                              <input
+                                 value={otp}
+                                 onChange={e =>
+                                    setOtp(
+                                       onlyDigits(e.target.value).slice(
+                                          0,
+                                          OTP_LENGTH
+                                       )
+                                    )
+                                 }
+                                 inputMode='numeric'
+                                 autoComplete='one-time-code'
+                                 className={cx(
+                                    'h-8 w-full rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] tracking-[0.35em] text-[#2B3A4A] outline-none sm:h-7 sm:w-[200px]',
+                                    'focus:border-[#0B8B4B]'
+                                 )}
+                              />
+                           </div>
+
+                           <div className='flex items-center justify-center gap-3'>
+                              <button
+                                 type='button'
+                                 onClick={goBackToPhone}
+                                 disabled={pending}
+                                 className='h-8 rounded-full border border-black/10 bg-white px-5 text-[10px] font-semibold text-[#2B3A4A] shadow-sm disabled:opacity-60'>
+                                 Edit Phone
+                              </button>
+
+                              <button
+                                 type='button'
+                                 onClick={submitOtp}
+                                 disabled={!canVerify}
+                                 className={cx(
+                                    'inline-flex h-8 items-center justify-center rounded-full px-6 text-[10px] font-semibold',
+                                    'bg-[#009970] text-white shadow-sm transition hover:brightness-110 active:brightness-95',
+                                    'disabled:opacity-60 disabled:hover:brightness-100'
+                                 )}>
+                                 {pending ? 'Verifying...' : 'Verify'}
+                              </button>
+                           </div>
+
+                           <div className='text-center text-[10px] text-[#6F8093]'>
+                              {resendLeft > 0 ? (
+                                 <span>Resend OTP in {resendLeft}s</span>
+                              ) : (
+                                 <button
+                                    type='button'
+                                    onClick={resendOtp}
+                                    disabled={pending}
+                                    className='font-semibold text-[#009970] hover:underline disabled:opacity-60'>
+                                    Resend OTP
+                                 </button>
+                              )}
+                           </div>
+
+                           <p className='text-center text-[10px] text-[#6F8093]'>
+                              Test OTP (dev):{' '}
+                              <span className='font-semibold text-[#133374]'>
+                                 1234
+                              </span>
+                           </p>
+                        </div>
+                     )}
+
+                     {step === 'CREDS' && (
+                        <div className='space-y-5'>
+                           <p className='text-center text-[11px] text-[#6F8093]'>
+                              Continue login for{' '}
+                              <span className='font-semibold text-[#133374]'>
+                                 {maskPhone(phone)}
+                              </span>
+                           </p>
+
+                           <div className='space-y-3'>
+                              {/* <div className='flex flex-col items-start justify-center gap-2 sm:flex-row sm:items-center sm:gap-3'>
+                                 <label className='w-full text-left text-[10px] text-[#6F8093] sm:w-auto sm:text-right'>
+                                    Email
+                                 </label>
+                                 <input
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    inputMode='email'
+                                    autoComplete='email'
+                                    className={cx(
+                                       'h-8 w-full rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] text-[#2B3A4A] outline-none sm:h-7 sm:w-[200px]',
+                                       'focus:border-[#0B8B4B]'
+                                    )}
+                                 />
+                              </div> */}
+
+                              <div className='flex flex-col items-start justify-center gap-2 sm:flex-row sm:items-center sm:gap-3'>
+                                 <label className='w-full text-left text-[10px] text-[#6F8093] sm:w-auto sm:text-right'>
+                                    Pass
+                                 </label>
+                                 <input
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    type='password'
+                                    autoComplete='current-password'
+                                    className={cx(
+                                       'h-8 w-full rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] text-[#2B3A4A] outline-none sm:h-7 sm:w-[200px]',
+                                       'focus:border-[#0B8B4B]'
+                                    )}
+                                 />
+                              </div>
+                           </div>
+
+                           <div className='flex items-center justify-center gap-3'>
+                              <button
+                                 type='button'
+                                 onClick={goBackToOtp}
+                                 disabled={pending}
+                                 className='h-8 rounded-full border border-black/10 bg-white px-5 text-[10px] font-semibold text-[#2B3A4A] shadow-sm disabled:opacity-60'>
+                                 Back
+                              </button>
+
+                              <button
+                                 type='button'
+                                 onClick={submitCreds}
+                                 disabled={!canLogin}
+                                 className={cx(
+                                    'inline-flex h-8 items-center justify-center rounded-full px-6 text-[10px] font-semibold',
+                                    'bg-[#009970] text-white shadow-sm transition hover:brightness-110 active:brightness-95',
+                                    'disabled:opacity-60 disabled:hover:brightness-100'
+                                 )}>
+                                 {pending ? 'Logging in...' : 'Login'}
+                              </button>
+                           </div>
+                        </div>
+                     )}
+
+                     {step === 'DONE' && (
+                        <div className='space-y-4 text-center'>
+                           <div className='mx-auto inline-flex rounded-full bg-[#EAF7EA] px-4 py-2 text-[11px] font-semibold text-[#2D8A2D] ring-1 ring-[#2D8A2D]/15'>
+                              Login successful
+                           </div>
+
+                           <div className='flex items-center justify-center gap-3'>
+                              <button
+                                 type='button'
+                                 onClick={() => router.push('/dashboard')}
+                                 className='inline-flex h-8 items-center justify-center rounded-full bg-[#009970] px-6 text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 active:brightness-95'>
+                                 Go to Dashboard
+                              </button>
+                           </div>
+                        </div>
+                     )}
+                  </div>
+               </div>
             </div>
-
-            <form className="mt-6 space-y-4" onSubmit={submit}>
-              {error && (
-                <div
-                  className="rounded-[10px] border border-red-500/15 bg-red-500/5 px-4 py-3 text-[12px] text-red-700"
-                  role="alert"
-                  aria-live="polite">
-                  {error}
-                </div>
-              )}
-
-              <label className="block text-[12px] font-medium text-[#7A7A7A]">
-                Username or email address <span className="text-[#F47B20]">*</span>
-                <input
-                  value={loginId}
-                  onChange={event => setLoginId(event.target.value)}
-                  className="mt-2 h-10 w-full rounded-full border border-[#E3E3E3] px-4 text-[13px] text-[#3A3A3A] outline-none transition focus:border-[#F47B20]"
-                  autoComplete="username"
-                />
-              </label>
-
-              <label className="block text-[12px] font-medium text-[#7A7A7A]">
-                Password <span className="text-[#F47B20]">*</span>
-                <input
-                  value={password}
-                  onChange={event => setPassword(event.target.value)}
-                  type="password"
-                  className="mt-2 h-10 w-full rounded-full border border-[#E3E3E3] px-4 text-[13px] text-[#3A3A3A] outline-none transition focus:border-[#F47B20]"
-                  autoComplete="current-password"
-                />
-              </label>
-
-              <div className="flex items-center gap-3 rounded-[14px] border border-[#E5E5E5] bg-[#FAFAFA] px-3 py-2">
-                <input
-                  type="checkbox"
-                  aria-label="I am not a robot"
-                  className="h-4 w-4 rounded border-[#CFCFCF] text-[#F47B20]"
-                />
-                <div className="text-[11px] text-[#6B6B6B]">
-                  I&apos;m not a robot
-                  <p className="text-[9px] text-[#B0B0B0]">reCAPTCHA</p>
-                </div>
-                <div className="ml-auto h-8 w-8 rounded bg-white shadow-inner" />
-              </div>
-
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="mt-2 inline-flex h-10 items-center justify-center rounded-full bg-[#F47B20] px-8 text-[12px] font-semibold uppercase tracking-[0.12em] text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60">
-                {pending ? 'Logging in...' : 'Log in'}
-              </button>
-
-              <div className="flex flex-wrap items-center justify-between text-[11px] text-[#8A8A8A]">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={event => setRemember(event.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-[#CFCFCF] text-[#F47B20]"
-                  />
-                  Remember me
-                </label>
-                <button type="button" className="text-[11px] text-[#8A8A8A]">
-                  Lost your password?
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+         </div>
+      </section>
+   );
 }
