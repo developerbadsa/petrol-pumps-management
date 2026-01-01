@@ -1,9 +1,11 @@
 import 'server-only';
 import '@/lib/http/undici-global';
 import { getToken } from '@/lib/auth/cookies';
+import { env } from '@/lib/env';
+import { mockApiFetch } from '@/lib/mockApi';
 
 const BASE = process.env.API_BASE_URL;
-if (!BASE) throw new Error('Missing env: API_BASE_URL');
+if (!BASE && env.dataMode !== 'mock') throw new Error('Missing env: API_BASE_URL');
 
 type ApiFetchOpts = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -12,6 +14,16 @@ type ApiFetchOpts = {
 };
 
 export async function apiFetch<T>(path: string, opts: ApiFetchOpts = {}): Promise<T> {
+  if (env.dataMode === 'mock') {
+    if (opts.auth) {
+      const token = await getToken();
+      if (!token) throw { status: 401, data: { message: 'Unauthenticated' }, url: path };
+    }
+    const mock = mockApiFetch(path, { method: opts.method, body: opts.body, auth: opts.auth });
+    if (mock.status >= 400) throw { status: mock.status, data: mock.data, url: path };
+    return mock.data as T;
+  }
+
   const token = opts.auth ? await getToken() : null;
 
   const url = path.startsWith('http')

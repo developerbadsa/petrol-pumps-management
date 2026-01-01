@@ -1,6 +1,8 @@
 import 'server-only';
 
 import {getToken} from '@/lib/auth/cookies';
+import {env} from '@/lib/env';
+import {mockApiFetch} from '@/lib/mockApi';
 
 export type LaravelValidationErrors = Record<string, string[]>;
 
@@ -39,6 +41,26 @@ export async function laravelFetch<T>(
    path: string,
    init: RequestInit & {auth?: boolean} = {}
 ): Promise<T> {
+   if (env.dataMode === 'mock') {
+      const auth = init.auth ?? true;
+      if (auth) {
+         const token = await getToken();
+         if (!token) {
+            throw new LaravelHttpError(401, 'Unauthenticated');
+         }
+      }
+      const method = typeof init.method === 'string' ? init.method : undefined;
+      const mock = mockApiFetch(path, {method, body: init.body, auth: init.auth});
+      if (mock.status >= 400) {
+         throw new LaravelHttpError(
+            mock.status,
+            mock.data?.message ?? 'Mock request failed',
+            mock.data?.errors
+         );
+      }
+      return mock.data as T;
+   }
+
    const base =
       process.env.API_BASE_URL ?? 'https://admin.petroleumstationbd.com/api';
    const url = joinUrl(base, path);

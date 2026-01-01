@@ -19,7 +19,7 @@ async function readJsonOrThrow(res: Response) {
 
 export const dashboardRepo: DashboardRepo = {
   async getStats() {
-    const res = await fetch('/api/dashboard/stats', {cache: 'no-store'});
+    const res = await fetch('/api/dashboard-stats', {cache: 'no-store'});
     const data = (await readJsonOrThrow(res)) as StatsApi;
 
     return {
