@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Modal from '@/components/ui/modal/Modal';
+import { require } from './../../../../node_modules/next/dist/compiled/webpack/bundle5';
 
 export default function CreateAlbumModal({
   open,
@@ -51,7 +52,7 @@ export default function CreateAlbumModal({
   };
 
   return (
-    <Modal open={open} title="Create Album" onClose={onClose} maxWidthClassName="max-w-[560px]">
+    <Modal open={open} title="Upload Album" onClose={onClose} maxWidthClassName="max-w-[560px]">
       <div className="p-4">
         <div className="space-y-3">
           <div>
@@ -75,12 +76,15 @@ export default function CreateAlbumModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">Cover (optional)</label>
+            <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
+              Select Image
+            </label>
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={(e) => setCover(e.target.files?.[0] ?? null)}
               className="block w-full text-[12px]"
+              required
             />
           </div>
 
