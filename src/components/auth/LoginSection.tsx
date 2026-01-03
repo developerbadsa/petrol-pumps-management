@@ -1,39 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import {useEffect, useMemo, useState} from 'react';
+import {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import MeshCorners from '@/components/ui/MeshCorners';
 import {useAuth} from '@/features/auth/AuthProvider';
 
-type Step = 'PHONE' | 'OTP' | 'CREDS' | 'DONE';
-
-type OtpMeta = {
-   requestId: string;
-   sentAt: number; // ms
-};
-
-const OTP_LENGTH = 4;
-const RESEND_SECONDS = 30;
-
-// Mock API (replace later with real OTP endpoints)
-async function requestOtpApi(phone: string): Promise<{requestId: string}> {
-   await new Promise(r => setTimeout(r, 650));
-   return {
-      requestId: `req_${phone.replace(/\D/g, '').slice(-6)}_${Date.now()}`,
-   };
-}
-
-// For testing: accept "1234"
-async function verifyOtpApi(args: {
-   requestId: string;
-   phone: string;
-   otp: string;
-}): Promise<{ok: true}> {
-   await new Promise(r => setTimeout(r, 450));
-   if (args.otp !== '1234') throw new Error('Invalid OTP');
-   return {ok: true};
-}
+type Step = 'PHONE' | 'CREDS' | 'DONE';
 
 function cx(...v: Array<string | false | null | undefined>) {
    return v.filter(Boolean).join(' ');
@@ -51,40 +24,32 @@ function maskPhone(p: string) {
 
 function isValidPhone(p: string) {
    const d = onlyDigits(p);
-   // keeps it flexible (BD or intl). tighten later if needed.
    return d.length >= 10 && d.length <= 14;
 }
+
+/*
+   OTP is temporarily disabled.
+   Keep these here if you want to re-enable later:
+
+   const OTP_LENGTH = 4;
+   const RESEND_SECONDS = 30;
+
+   async function requestOtpApi(phone: string): Promise<{requestId: string}> { ... }
+   async function verifyOtpApi(args: { requestId: string; phone: string; otp: string; }): Promise<{ok: true}> { ... }
+*/
 
 export default function LoginSection() {
    const router = useRouter();
 
    const [step, setStep] = useState<Step>('PHONE');
    const [phone, setPhone] = useState('');
-   const [otp, setOtp] = useState('');
-   const [meta, setMeta] = useState<OtpMeta | null>(null);
    const [password, setPassword] = useState('');
 
    const [pending, setPending] = useState(false);
    const [error, setError] = useState<string | null>(null);
    const {refresh} = useAuth();
 
-   const [now, setNow] = useState(() => Date.now());
-   useEffect(() => {
-      if (step !== 'OTP' || !meta) return;
-      const t = setInterval(() => setNow(Date.now()), 500);
-      return () => clearInterval(t);
-   }, [step, meta]);
-
-   const resendLeft = useMemo(() => {
-      if (!meta) return 0;
-      const elapsed = Math.floor((now - meta.sentAt) / 1000);
-      return Math.max(0, RESEND_SECONDS - elapsed);
-   }, [meta, now]);
-
-   const canSendOtp = isValidPhone(phone) && !pending;
-   const canVerify =
-      otp.length === OTP_LENGTH && Boolean(meta?.requestId) && !pending;
-
+   const canContinue = isValidPhone(phone) && !pending;
    const canLogin = isValidPhone(phone) && password.length >= 4 && !pending;
 
    const submitPhone = async () => {
@@ -95,59 +60,8 @@ export default function LoginSection() {
          return;
       }
 
-      setPending(true);
-      try {
-         const res = await requestOtpApi(p);
-         setMeta({requestId: res.requestId, sentAt: Date.now()});
-         setOtp('');
-         setStep('OTP');
-      } catch {
-         setError('Failed to send OTP. Please try again.');
-      } finally {
-         setPending(false);
-      }
-   };
-
-   const resendOtp = async () => {
-      if (!isValidPhone(phone) || resendLeft > 0) return;
-      setError(null);
-
-      setPending(true);
-      try {
-         const res = await requestOtpApi(phone.trim());
-         setMeta({requestId: res.requestId, sentAt: Date.now()});
-         setOtp('');
-      } catch {
-         setError('Failed to resend OTP. Please try again.');
-      } finally {
-         setPending(false);
-      }
-   };
-
-   const submitOtp = async () => {
-      if (!meta?.requestId) return;
-
-      setError(null);
-      if (otp.length !== OTP_LENGTH) {
-         setError(`Please enter the ${OTP_LENGTH}-digit OTP.`);
-         return;
-      }
-
-      setPending(true);
-      try {
-         await verifyOtpApi({
-            requestId: meta.requestId,
-            phone: phone.trim(),
-            otp,
-         });
-
-         // After OTP: ask for email + password (backend login requires them)
-         setStep('CREDS');
-      } catch {
-         setError('OTP did not match. Please try again.');
-      } finally {
-         setPending(false);
-      }
+      // OTP disabled: directly go to password step
+      setStep('CREDS');
    };
 
    const submitCreds = async () => {
@@ -186,6 +100,7 @@ export default function LoginSection() {
 
             throw new Error(firstFieldError || data?.message || 'Login failed');
          }
+
          await refresh();
          router.refresh();
          setStep('DONE');
@@ -198,14 +113,8 @@ export default function LoginSection() {
 
    const goBackToPhone = () => {
       setError(null);
-      setOtp('');
-      setMeta(null);
+      setPassword('');
       setStep('PHONE');
-   };
-
-   const goBackToOtp = () => {
-      setError(null);
-      setStep('OTP');
    };
 
    return (
@@ -224,17 +133,14 @@ export default function LoginSection() {
          <div className='pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(900px_520px_at_18%_10%,rgba(45,138,45,0.10),transparent_60%),radial-gradient(900px_520px_at_82%_10%,rgba(45,138,45,0.10),transparent_60%)]' />
 
          <div className='lpg-container relative z-10'>
-            {/* glass panel like screenshot */}
             <div className='rounded-[18px] bg-white/45 p-8 shadow-[0_18px_55px_rgba(0,0,0,0.10)] backdrop-blur-sm md:p-12'>
                <div className='mx-auto w-full max-w-[560px] overflow-hidden rounded-[10px] bg-white shadow-[0_16px_45px_rgba(0,0,0,0.08)]'>
-                  {/* card header */}
                   <div className='flex h-11 items-center justify-center bg-[#009970]'>
                      <h3 className='text-[13px] font-semibold text-white'>
                         Login
                      </h3>
                   </div>
 
-                  {/* card body */}
                   <div className='px-7 py-9 md:px-10'>
                      {error && (
                         <div
@@ -268,13 +174,13 @@ export default function LoginSection() {
                               <button
                                  type='button'
                                  onClick={submitPhone}
-                                 disabled={!canSendOtp}
+                                 disabled={!canContinue}
                                  className={cx(
                                     'inline-flex h-8 items-center justify-center rounded-full px-6 text-[10px] font-semibold',
                                     'bg-[#009970] text-white shadow-sm transition hover:brightness-110 active:brightness-95',
                                     'disabled:opacity-60 disabled:hover:brightness-100'
                                  )}>
-                                 {pending ? 'Sending...' : 'Send OTP'}
+                                 Continue
                               </button>
                            </div>
 
@@ -289,83 +195,6 @@ export default function LoginSection() {
                         </div>
                      )}
 
-                     {step === 'OTP' && (
-                        <div className='space-y-5'>
-                           <p className='text-center text-[11px] text-[#6F8093]'>
-                              OTP sent to{' '}
-                              <span className='font-semibold text-[#133374]'>
-                                 {maskPhone(phone)}
-                              </span>
-                           </p>
-
-                           <div className='flex flex-col items-start justify-center gap-2 sm:flex-row sm:items-center sm:gap-3'>
-                              <label className='w-full text-left text-[10px] text-[#6F8093] sm:w-auto sm:text-right'>
-                                 OTP
-                              </label>
-                              <input
-                                 value={otp}
-                                 onChange={e =>
-                                    setOtp(
-                                       onlyDigits(e.target.value).slice(
-                                          0,
-                                          OTP_LENGTH
-                                       )
-                                    )
-                                 }
-                                 inputMode='numeric'
-                                 autoComplete='one-time-code'
-                                 className={cx(
-                                    'h-8 w-full rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] tracking-[0.35em] text-[#2B3A4A] outline-none sm:h-7 sm:w-[200px]',
-                                    'focus:border-[#0B8B4B]'
-                                 )}
-                              />
-                           </div>
-
-                           <div className='flex items-center justify-center gap-3'>
-                              <button
-                                 type='button'
-                                 onClick={goBackToPhone}
-                                 disabled={pending}
-                                 className='h-8 rounded-full border border-black/10 bg-white px-5 text-[10px] font-semibold text-[#2B3A4A] shadow-sm disabled:opacity-60'>
-                                 Edit Phone
-                              </button>
-
-                              <button
-                                 type='button'
-                                 onClick={submitOtp}
-                                 disabled={!canVerify}
-                                 className={cx(
-                                    'inline-flex h-8 items-center justify-center rounded-full px-6 text-[10px] font-semibold',
-                                    'bg-[#009970] text-white shadow-sm transition hover:brightness-110 active:brightness-95',
-                                    'disabled:opacity-60 disabled:hover:brightness-100'
-                                 )}>
-                                 {pending ? 'Verifying...' : 'Verify'}
-                              </button>
-                           </div>
-
-                           <div className='text-center text-[10px] text-[#6F8093]'>
-                              {resendLeft > 0 ? (
-                                 <span>Resend OTP in {resendLeft}s</span>
-                              ) : (
-                                 <button
-                                    type='button'
-                                    onClick={resendOtp}
-                                    disabled={pending}
-                                    className='font-semibold text-[#009970] hover:underline disabled:opacity-60'>
-                                    Resend OTP
-                                 </button>
-                              )}
-                           </div>
-
-                           <p className='text-center text-[10px] text-[#6F8093]'>
-                              Test OTP (dev):{' '}
-                              <span className='font-semibold text-[#133374]'>
-                                 1234
-                              </span>
-                           </p>
-                        </div>
-                     )}
-
                      {step === 'CREDS' && (
                         <div className='space-y-5'>
                            <p className='text-center text-[11px] text-[#6F8093]'>
@@ -376,22 +205,6 @@ export default function LoginSection() {
                            </p>
 
                            <div className='space-y-3'>
-                              {/* <div className='flex flex-col items-start justify-center gap-2 sm:flex-row sm:items-center sm:gap-3'>
-                                 <label className='w-full text-left text-[10px] text-[#6F8093] sm:w-auto sm:text-right'>
-                                    Email
-                                 </label>
-                                 <input
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    inputMode='email'
-                                    autoComplete='email'
-                                    className={cx(
-                                       'h-8 w-full rounded-[6px] border border-black/10 bg-[#F5F7F9] px-3 text-[11px] text-[#2B3A4A] outline-none sm:h-7 sm:w-[200px]',
-                                       'focus:border-[#0B8B4B]'
-                                    )}
-                                 />
-                              </div> */}
-
                               <div className='flex flex-col items-start justify-center gap-2 sm:flex-row sm:items-center sm:gap-3'>
                                  <label className='w-full text-left text-[10px] text-[#6F8093] sm:w-auto sm:text-right'>
                                     Pass
@@ -412,7 +225,7 @@ export default function LoginSection() {
                            <div className='flex items-center justify-center gap-3'>
                               <button
                                  type='button'
-                                 onClick={goBackToOtp}
+                                 onClick={goBackToPhone}
                                  disabled={pending}
                                  className='h-8 rounded-full border border-black/10 bg-white px-5 text-[10px] font-semibold text-[#2B3A4A] shadow-sm disabled:opacity-60'>
                                  Back
