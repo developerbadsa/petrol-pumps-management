@@ -84,9 +84,10 @@ export function AuthProvider({
     inFlight.current = p;
     return p;
   }, []);
-  useEffect(() => {
-  if (!initialUser) refresh();
-}, [initialUser, refresh]);
+
+//   useEffect(() => {
+//   if (!initialUser) refresh();
+// }, [initialUser, refresh]);
 
 
   const logout = useCallback(async () => {
