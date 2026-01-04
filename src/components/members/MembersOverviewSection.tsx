@@ -1,14 +1,80 @@
 'use client';
 
-import { useMemo } from 'react';
+import {useMemo} from 'react';
+import {useQuery} from '@tanstack/react-query';
 import TablePanel from '@/components/ui/table-panel/TablePanel';
-import type { ColumnDef } from '@/components/ui/table-panel/types';
-import { MOCK_MEMBERS, type Member } from './mockMembers';
+import type {ColumnDef} from '@/components/ui/table-panel/types';
+
+type ApiStationLocation = {
+  division?: string | null;
+  district?: string | null;
+  upazila?: string | null;
+};
+
+type ApiStationOwner = {
+  id: number;
+  full_name: string;
+  profile_image: string | null;
+  gas_stations?: {
+    station_name: string;
+    location?: ApiStationLocation | null;
+  }[];
+};
+
+type ApiStationOwnerResponse = {
+  current_page: number;
+  from: number | null;
+  data: ApiStationOwner[];
+};
+
+type Member = {
+  sl: number;
+  photoUrl: string;
+  ownerName: string;
+  memberId: string;
+  stations: string[];
+  zone: string;
+  district: string;
+  upazila: string;
+};
+
+const fallbackAvatar = (name: string) =>
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=133374&color=ffffff`;
+
+const fetchPublicOwners = async () => {
+  const res = await fetch('/api/public/station-owners/list');
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.message ?? 'Failed to load members');
+  }
+  return data as ApiStationOwnerResponse;
+};
 
 export default function MembersOverviewSection() {
+  const ownersQ = useQuery({
+    queryKey: ['public', 'station-owners', 'list'],
+    queryFn: fetchPublicOwners,
+  });
 
+  const rows = useMemo<Member[]>(() => {
+    const items = ownersQ.data?.data ?? [];
+    const start = ownersQ.data?.from ?? 1;
+    return items.map((owner, index) => {
+      const stations = owner.gas_stations?.map((station) => station.station_name) ?? [];
+      const location = owner.gas_stations?.[0]?.location ?? null;
+      return {
+        sl: start + index,
+        photoUrl: owner.profile_image ?? fallbackAvatar(owner.full_name),
+        ownerName: owner.full_name,
+        memberId: String(owner.id),
+        stations,
+        zone: location?.division ?? '',
+        district: location?.district ?? '',
+        upazila: location?.upazila ?? '',
+      };
+    });
+  }, [ownersQ.data]);
 
-  
   const columns = useMemo<ColumnDef<Member>[]>(() => [
     {
       id: 'sl',
@@ -106,6 +172,12 @@ export default function MembersOverviewSection() {
     },
   ], []);
 
+  const statusMessage = ownersQ.isLoading
+    ? 'Loading members...'
+    : ownersQ.isError
+      ? 'Unable to load members right now.'
+      : null;
+
   return (
     <section className="relative overflow-hidden bg-[#F4F9F4] py-14">
       <div className="absolute inset-x-0 top-0 h-[3px] bg-[#6CC12A]" />
@@ -118,11 +190,14 @@ export default function MembersOverviewSection() {
           <p className="mt-2 text-[11px] leading-relaxed text-[#8A9CB0] md:text-[12px]">
             Lorem ipsum dolor sit amet consectetur. Vitae ornare cursus justo libero venenatis donec.
           </p>
+          {statusMessage ? (
+            <p className="mt-3 text-[11px] font-medium text-[#FC7160] md:text-[12px]">{statusMessage}</p>
+          ) : null}
         </div>
 
         <div className="mt-10">
           <TablePanel
-            rows={MOCK_MEMBERS}
+            rows={rows}
             columns={columns}
             getRowKey={(r) => String(r.sl)}
             exportFileName="members-export.csv"
