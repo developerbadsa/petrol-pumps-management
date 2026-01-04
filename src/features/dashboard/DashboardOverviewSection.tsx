@@ -59,9 +59,9 @@ export default function DashboardOverviewSection() {
          <div className='space-y-8'>
             {/* Top row */}
             <div className='grid gap-10 lg:grid-cols-[320px_1fr]'>
-               <div className='rounded-2xl bg-[#F3F6FF] p-6 shadow-[0_18px_38px_rgba(2,6,23,0.12)]'>
+               <div className='rounded-2xl bg-[#F3F6FF] p-6'>
                   <div className='grid h-[240px] place-items-center'>
-                     <div className='h-28 w-28 overflow-hidden rounded-2xl border border-white bg-white shadow-sm'>
+                     <div className='h-[200px] w-[200px] overflow-hidden'>
                         {avatarSrc ? (
                            <img
                               src={avatarSrc}
@@ -111,28 +111,28 @@ export default function DashboardOverviewSection() {
             <div className='grid gap-5 sm:grid-cols-2 xl:grid-cols-4'>
                <StatTile
                   title='Total Stations'
-                  date='—'
+                  date=' '
                   value={stats.totalStations}
                   icon={<ShoppingCart size={22} className='text-white/90' />}
                   className='bg-gradient-to-r from-[#4AD7F3] to-[#19B6D9] py-12'
                />
                <StatTile
                   title='Station Owners'
-                  date='—'
+                  date=' '
                   value={stats.totalOwners}
                   icon={<Users size={22} className='text-white/90' />}
                   className='bg-gradient-to-r from-[#5DEC97] to-[#4ADA95] py-12'
                />
                <StatTile
                   title='Unread Messages'
-                  date='—'
+                  date=''
                   value={stats.unreadMessages}
                   icon={<FileText size={22} className='text-white/90' />}
                   className='bg-gradient-to-r from-[#FCDA8A] to-[#FDBA65] py-12'
                />
                <StatTile
                   title='Active Notices'
-                  date='—'
+                  date=''
                   value={stats.activeNotices}
                   icon={<Newspaper size={22} className='text-white/90' />}
                   className='bg-gradient-to-r from-[#FEBB77] to-[#FB6D5E] py-12'
