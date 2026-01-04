@@ -16,10 +16,23 @@ type AlbumImageApiRow = {
   image_path?: string | null;
 };
 
+type AlbumApiResponse = {
+  id?: number | string | null;
+  title?: string | null;
+  images?: AlbumImageApiRow[] | null;
+};
+
 type AlbumImageRow = {
   id: number;
   url: string;
 };
+
+function normalizeAlbum(raw: any): AlbumApiResponse | null {
+  if (!raw) return null;
+  if (raw?.data && !Array.isArray(raw.data)) return raw.data as AlbumApiResponse;
+  if (raw?.data?.data && !Array.isArray(raw.data.data)) return raw.data.data as AlbumApiResponse;
+  return raw as AlbumApiResponse;
+}
 
 function mapRow(row: AlbumImageApiRow): AlbumImageRow | null {
   const idNum = Number(row.id);
@@ -42,6 +55,7 @@ function mapRow(row: AlbumImageApiRow): AlbumImageRow | null {
 export default function AlbumImagesSection({ albumId }: { albumId: string }) {
   const router = useRouter();
   const [items, setItems] = useState<AlbumImageRow[]>([]);
+  const [albumTitle, setAlbumTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -51,7 +65,7 @@ export default function AlbumImagesSection({ albumId }: { albumId: string }) {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/album-images?album_id=${encodeURIComponent(albumId)}`, {
+      const res = await fetch(`/api/albums/${encodeURIComponent(albumId)}`, {
         method: 'GET',
         cache: 'no-store',
         headers: { Accept: 'application/json' },
@@ -60,9 +74,11 @@ export default function AlbumImagesSection({ albumId }: { albumId: string }) {
       const raw = await res.json().catch(() => null);
       if (!res.ok) return;
 
-      const rows = normalizeList<AlbumImageApiRow>(raw);
+      const album = normalizeAlbum(raw);
+      const rows = normalizeList<AlbumImageApiRow>(album?.images ?? []);
       const next = rows.map(mapRow).filter(Boolean) as AlbumImageRow[];
       setItems(next);
+      setAlbumTitle((album?.title ?? '').toString().trim() || null);
     } finally {
       setLoading(false);
     }
@@ -138,7 +154,7 @@ export default function AlbumImagesSection({ albumId }: { albumId: string }) {
           Back
         </button>
         <h2 className="text-center text-[16px] font-semibold text-[#2B3A4A]">
-          Album Images (#{albumId})
+          Album Images {albumTitle ? `- ${albumTitle}` : `(#${albumId})`}
         </h2>
         <div className="w-[68px]" />
       </div>

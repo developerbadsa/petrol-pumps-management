@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    const data = await laravelFetch('/albums', { method: 'GET', auth: true });
+    const data = await laravelFetch('/albums', { method: 'GET', auth: false });
     return NextResponse.json(data, { status: 200 });
   } catch (e) {
     if (e instanceof LaravelHttpError) {
