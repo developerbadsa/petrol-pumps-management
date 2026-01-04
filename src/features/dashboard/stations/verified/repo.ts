@@ -1,20 +1,14 @@
 import type { VerifiedStationRow } from './types';
 import { mapVerifiedStations } from './map';
+import { buildStationFormData, type StationUpsertPayload } from '../formData';
 
-export type GasStationUpsertInput = {
-  station_owner_id: number;
+export type GasStationUpsertInput = StationUpsertPayload & {
+  station_owner_id: number | string;
   station_name: string;
-  fuel_type?: string | null;
-  station_type?: string | null;
-  station_status?: string | null;
-  division_id: number;
-  district_id: number;
-  upazila_id: number;
+  division_id: number | string;
+  district_id: number | string;
+  upazila_id: number | string;
   station_address: string;
-  commencement_date?: string | null;
-  contact_person_name?: string | null;
-  contact_person_phone?: string | null;
-  other_businesses?: number[] | null;
 };
 
 async function readJsonOrThrow(res: Response) {
@@ -48,19 +42,21 @@ export async function listVerifiedStationsRepo(): Promise<VerifiedStationRow[]> 
 }
 
 export async function createStationRepo(payload: GasStationUpsertInput) {
+  const formData = buildStationFormData(payload);
   const res = await fetch('/api/stations', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(payload),
+    headers: { Accept: 'application/json' },
+    body: formData,
   });
   return readJsonOrThrow(res);
 }
 
 export async function updateStationRepo(id: string, payload: Partial<GasStationUpsertInput>) {
+  const formData = buildStationFormData(payload);
   const res = await fetch(`/api/stations/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(payload),
+    headers: { Accept: 'application/json' },
+    body: formData,
   });
   return readJsonOrThrow(res);
 }

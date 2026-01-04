@@ -1,7 +1,6 @@
 'use client';
 
-import {useCallback, useMemo} from 'react';
-import {useRouter} from 'next/navigation';
+import {useCallback, useMemo, useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import TablePanel from '@/components/ui/table-panel/TablePanel';
 import type {ColumnDef} from '@/components/ui/table-panel/types';
@@ -18,11 +17,14 @@ import {
 
 import type {StationRow} from './types';
 import {
+   useCreateStation,
    useDeleteStation,
    useUnverifiedStations,
+   useUpdateStation,
    useVerifyStation,
 } from './queries';
 import {getStationDetailsRepo} from './repo';
+import StationFormModal from '../StationFormModal';
 
 function cx(...v: Array<string | false | null | undefined>) {
    return v.filter(Boolean).join(' ');
@@ -62,12 +64,18 @@ function ActionDot({
 }
 
 export default function UnverifiedStationsSection() {
-   const router = useRouter();
    const qc = useQueryClient();
 
    const q = useUnverifiedStations();
    const verifyM = useVerifyStation();
    const delM = useDeleteStation();
+   const createM = useCreateStation();
+   const updateM = useUpdateStation();
+
+   const [modalOpen, setModalOpen] = useState(false);
+   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
+   const [activeId, setActiveId] = useState<string | null>(null);
+   const [formError, setFormError] = useState('');
 
    const prefetchDetails = useCallback(
       async (id: string) => {
@@ -85,9 +93,12 @@ export default function UnverifiedStationsSection() {
          try {
             await prefetchDetails(id);
          } catch {}
-         router.push(`/manage-stations?mode=view&id=${encodeURIComponent(id)}`);
+         setFormError('');
+         setActiveId(id);
+         setModalMode('view');
+         setModalOpen(true);
       },
-      [prefetchDetails, router]
+      [prefetchDetails]
    );
 
    const goEdit = useCallback(
@@ -95,9 +106,12 @@ export default function UnverifiedStationsSection() {
          try {
             await prefetchDetails(id);
          } catch {}
-         router.push(`/manage-stations?mode=edit&id=${encodeURIComponent(id)}`);
+         setFormError('');
+         setActiveId(id);
+         setModalMode('edit');
+         setModalOpen(true);
       },
-      [prefetchDetails, router]
+      [prefetchDetails]
    );
 
    const columns = useMemo<ColumnDef<StationRow>[]>(() => {
@@ -190,7 +204,7 @@ export default function UnverifiedStationsSection() {
                   type='button'
                   onClick={() => {
                      if (verifyM.isPending) return;
-                     const ok = window.confirm('Verify this station?');
+                     const ok = window.confirm('Approve this station?');
                      if (!ok) return;
                      verifyM.mutate(r.id);
                   }}
@@ -279,6 +293,18 @@ export default function UnverifiedStationsSection() {
                   <div className='flex items-center justify-between'>
                      <button
                         type='button'
+                        onClick={() => {
+                           setFormError('');
+                           setActiveId(null);
+                           setModalMode('create');
+                           setModalOpen(true);
+                        }}
+                        className='inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#133374] px-8 text-[13px] font-semibold text-white shadow-sm hover:brightness-110 active:brightness-95'>
+                        Add Station
+                     </button>
+
+                     <button
+                        type='button'
                         onClick={() =>
                            exportRowsToCsv(
                               rows,
@@ -308,6 +334,38 @@ export default function UnverifiedStationsSection() {
                }
             />
          )}
+
+         <StationFormModal
+            open={modalOpen}
+            mode={modalMode}
+            stationId={activeId}
+            saving={createM.isPending || updateM.isPending}
+            error={formError}
+            onClose={() => {
+               setModalOpen(false);
+               setActiveId(null);
+               setFormError('');
+            }}
+            onSubmit={async payload => {
+               setFormError('');
+
+               try {
+                  if (modalMode === 'create') {
+                     await createM.mutateAsync(payload as any);
+                  } else {
+                     if (!activeId) {
+                        setFormError('Invalid station id');
+                        return;
+                     }
+                     await updateM.mutateAsync({id: activeId, payload});
+                  }
+                  setModalOpen(false);
+                  setActiveId(null);
+               } catch (e: any) {
+                  setFormError(e?.message ?? 'Failed to save station');
+               }
+            }}
+         />
       </section>
    );
 }

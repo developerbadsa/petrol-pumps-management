@@ -7,6 +7,11 @@ import {
   listUnverifiedStationsRepo,
   verifyStationRepo,
 } from './repo';
+import {
+  createStationRepo,
+  updateStationRepo,
+  type GasStationUpsertInput,
+} from '../verified/repo';
 
 const KEY_UNVERIFIED = ['stations', 'unverified'] as const;
 const KEY_VERIFIED = ['stations', 'verified'] as const;
@@ -67,6 +72,31 @@ export function useDeleteStation() {
     },
     onSettled: async () => {
       await qc.invalidateQueries({ queryKey: KEY_UNVERIFIED });
+    },
+  });
+}
+
+export function useCreateStation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: GasStationUpsertInput) => createStationRepo(payload),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: KEY_UNVERIFIED });
+      await qc.invalidateQueries({ queryKey: KEY_VERIFIED });
+    },
+  });
+}
+
+export function useUpdateStation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (args: { id: string; payload: Partial<GasStationUpsertInput> }) =>
+      updateStationRepo(args.id, args.payload),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: KEY_UNVERIFIED });
+      await qc.invalidateQueries({ queryKey: KEY_VERIFIED });
     },
   });
 }

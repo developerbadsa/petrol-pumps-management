@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Database, Eye, Pencil, FileText } from 'lucide-react';
 
@@ -12,8 +11,9 @@ import { exportRowsToCsv } from '@/components/ui/table-panel/exportCsv';
 import Loader from '@/components/shared/Loader';
 
 import type { VerifiedStationRow } from './types';
-import { useVerifiedStations } from './queries';
+import { useCreateStation, useUpdateStation, useVerifiedStations } from './queries';
 import { getStationDetailsRepo } from './repo';
+import StationFormModal from '../StationFormModal';
 
 function cx(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ');
@@ -55,9 +55,14 @@ function IconDot({
 
 export default function VerifiedStationsTable() {
   const q = useVerifiedStations();
-
-  const router = useRouter();
   const qc = useQueryClient();
+  const createM = useCreateStation();
+  const updateM = useUpdateStation();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [formError, setFormError] = useState('');
 
   const prefetchDetails = useCallback(
     async (id: string) => {
@@ -77,9 +82,12 @@ export default function VerifiedStationsTable() {
       } catch {
         // If prefetch fails, still navigate; manage page can refetch.
       }
-      router.push(`/manage-stations?mode=view&id=${encodeURIComponent(id)}`);
+      setFormError('');
+      setActiveId(id);
+      setModalMode('view');
+      setModalOpen(true);
     },
-    [prefetchDetails, router]
+    [prefetchDetails]
   );
 
   const goEdit = useCallback(
@@ -87,9 +95,12 @@ export default function VerifiedStationsTable() {
       try {
         await prefetchDetails(id);
       } catch {}
-      router.push(`/manage-stations?mode=edit&id=${encodeURIComponent(id)}`);
+      setFormError('');
+      setActiveId(id);
+      setModalMode('edit');
+      setModalOpen(true);
     },
-    [prefetchDetails, router]
+    [prefetchDetails]
   );
 
   const columns = useMemo<ColumnDef<VerifiedStationRow>[]>(() => {
@@ -238,27 +249,76 @@ export default function VerifiedStationsTable() {
   const rows = q.data ?? [];
 
   return (
-    <TablePanel<VerifiedStationRow>
-      rows={rows}
-      columns={columns}
-      getRowKey={(r) => r.id}
-      searchText={(r) =>
-        `${r.stationName} ${r.ownerNameLines.join(' ')} ${r.ownerPhone} ${r.division} ${r.district} ${r.upazila}`
-      }
-      exportFileName="verified-stations.csv"
-      exportLabel="Export to Excel"
-      showTopBar
-      showExport
-      totalLabel={() => (
-        <button
-          type="button"
-          onClick={() => exportRowsToCsv(rows, columns, 'verified-stations-all.csv')}
-           className='inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#009970] px-8 text-[13px] font-semibold text-white shadow-sm hover:brightness-110 active:brightness-95'>
-          <Database size={20} className="text-white" />
-          Export All Data
-        </button>
-      )}
-      className="bg-transparent p-0 shadow-none backdrop-blur-0"
-    />
+    <>
+      <TablePanel<VerifiedStationRow>
+        rows={rows}
+        columns={columns}
+        getRowKey={(r) => r.id}
+        searchText={(r) =>
+          `${r.stationName} ${r.ownerNameLines.join(' ')} ${r.ownerPhone} ${r.division} ${r.district} ${r.upazila}`
+        }
+        exportFileName="verified-stations.csv"
+        exportLabel="Export to Excel"
+        showTopBar
+        showExport
+        totalLabel={() => (
+          <button
+            type="button"
+            onClick={() => exportRowsToCsv(rows, columns, 'verified-stations-all.csv')}
+            className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#009970] px-8 text-[13px] font-semibold text-white shadow-sm hover:brightness-110 active:brightness-95"
+          >
+            <Database size={20} className="text-white" />
+            Export All Data
+          </button>
+        )}
+        controlsRightSlot={
+          <button
+            type="button"
+            onClick={() => {
+              setFormError('');
+              setActiveId(null);
+              setModalMode('create');
+              setModalOpen(true);
+            }}
+            className="inline-flex h-9 items-center justify-center rounded-[6px] bg-[#133374] px-4 text-[12px] font-semibold text-white shadow-sm hover:brightness-110 active:brightness-95"
+          >
+            Add Station
+          </button>
+        }
+        className="bg-transparent p-0 shadow-none backdrop-blur-0"
+      />
+
+      <StationFormModal
+        open={modalOpen}
+        mode={modalMode}
+        stationId={activeId}
+        saving={createM.isPending || updateM.isPending}
+        error={formError}
+        onClose={() => {
+          setModalOpen(false);
+          setActiveId(null);
+          setFormError('');
+        }}
+        onSubmit={async (payload) => {
+          setFormError('');
+
+          try {
+            if (modalMode === 'create') {
+              await createM.mutateAsync(payload as any);
+            } else {
+              if (!activeId) {
+                setFormError('Invalid station id');
+                return;
+              }
+              await updateM.mutateAsync({ id: activeId, payload });
+            }
+            setModalOpen(false);
+            setActiveId(null);
+          } catch (e: any) {
+            setFormError(e?.message ?? 'Failed to save station');
+          }
+        }}
+      />
+    </>
   );
 }

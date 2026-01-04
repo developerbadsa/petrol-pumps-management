@@ -24,7 +24,7 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
     const data = await laravelFetch<any>(`/station-owners/${ownerId}?_method=PUT`, {
       method: 'POST',
       auth: true,
-      body: JSON.stringify({ verification_status: 'verified' }),
+      body: JSON.stringify({ verification_status: 'APPROVED', rejection_reason: null }),
     });
     return NextResponse.json(data);
   }
@@ -33,7 +33,7 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
   const data = await laravelFetch<any>(`/gas-stations/${id}?_method=PUT`, {
     method: 'POST',
     auth: true,
-    body: JSON.stringify({ verification_status: 'verified', is_verified: true }),
+    body: JSON.stringify({ verification_status: 'APPROVED', is_verified: true }),
   });
 
   return NextResponse.json(data);
