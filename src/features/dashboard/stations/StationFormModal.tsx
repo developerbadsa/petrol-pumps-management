@@ -49,7 +49,7 @@ const emptyForm: FormState = {
   station_name: '',
   fuel_type: '',
   station_type: '',
-  station_status: '',
+  station_status: 'PENDING',
   business_type: '',
   dealership_agreement: '',
   division_id: '',
@@ -67,6 +67,11 @@ const emptyForm: FormState = {
   nid: null,
   tin: null,
   explosive_license: null,
+};
+
+const createDefaults: Pick<FormState, 'station_status' | 'verification_status'> = {
+  station_status: 'PENDING',
+  verification_status: 'PENDING',
 };
 
 function pick<T>(...vals: Array<T | null | undefined>) {
@@ -245,7 +250,7 @@ export default function StationFormModal({
   useEffect(() => {
     if (!open) return;
     if (mode === 'create') {
-      setForm(emptyForm);
+      setForm({...emptyForm, ...createDefaults});
       return;
     }
     if (stationDetailsQ.data) {
@@ -278,12 +283,13 @@ export default function StationFormModal({
   const canSubmit = !isView && requiredFilled && !saving;
 
   const handleSubmit = () => {
+    const statusDefaults = mode === 'create' ? createDefaults : {};
     const payload: StationUpsertPayload = {
       station_owner_id: toNumberOrUndefined(form.station_owner_id) ?? form.station_owner_id,
       station_name: form.station_name,
       fuel_type: form.fuel_type || null,
       station_type: form.station_type || null,
-      station_status: form.station_status || null,
+      station_status: statusDefaults.station_status ?? (form.station_status || null),
       business_type: form.business_type || null,
       dealership_agreement: form.dealership_agreement || null,
       division_id: toNumberOrUndefined(form.division_id) ?? form.division_id,
@@ -296,7 +302,7 @@ export default function StationFormModal({
       other_businesses: form.other_businesses
         .map((id) => toNumberOrUndefined(id) ?? id)
         .filter(Boolean),
-      verification_status: form.verification_status || null,
+      verification_status: statusDefaults.verification_status ?? (form.verification_status || null),
       verified_by: toNumberOrUndefined(form.verified_by),
       verified_at: toDateOrUndefined(form.verified_at),
       rejection_reason:
@@ -327,6 +333,11 @@ export default function StationFormModal({
         ) : (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
+              {mode === 'create' ? (
+                <div className="md:col-span-2 rounded-[8px] border border-dashed border-black/10 bg-[#F6F9FF] px-4 py-3 text-[12px] text-[#2B3A4A]">
+                  <span className="font-semibold text-[#173A7A]">Status:</span> Pending
+                </div>
+              ) : null}
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
                   Station Owner
@@ -382,17 +393,19 @@ export default function StationFormModal({
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
-                  Station Status
-                </label>
-                <input
-                  value={form.station_status}
-                  onChange={(e) => setForm((prev) => ({...prev, station_status: e.target.value}))}
-                  disabled={isView}
-                  className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
-                />
-              </div>
+              {mode !== 'create' ? (
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
+                    Station Status
+                  </label>
+                  <input
+                    value={form.station_status}
+                    onChange={(e) => setForm((prev) => ({...prev, station_status: e.target.value}))}
+                    disabled={isView}
+                    className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
+                  />
+                </div>
+              ) : null}
 
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
@@ -569,61 +582,65 @@ export default function StationFormModal({
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
-                  Verification Status
-                </label>
-                <select
-                  value={form.verification_status}
-                  onChange={(e) =>
-                    setForm((prev) => ({...prev, verification_status: e.target.value}))
-                  }
-                  disabled={isView}
-                  className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
-                >
-                  <option value="PENDING">PENDING</option>
-                  <option value="APPROVED">APPROVED</option>
-                  <option value="REJECTED">REJECTED</option>
-                </select>
-              </div>
+              {mode !== 'create' ? (
+                <>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
+                      Verification Status
+                    </label>
+                    <select
+                      value={form.verification_status}
+                      onChange={(e) =>
+                        setForm((prev) => ({...prev, verification_status: e.target.value}))
+                      }
+                      disabled={isView}
+                      className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="APPROVED">APPROVED</option>
+                      <option value="REJECTED">REJECTED</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
-                  Verified By (ID)
-                </label>
-                <input
-                  value={form.verified_by}
-                  onChange={(e) => setForm((prev) => ({...prev, verified_by: e.target.value}))}
-                  disabled={isView}
-                  className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
-                />
-              </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
+                      Verified By (ID)
+                    </label>
+                    <input
+                      value={form.verified_by}
+                      onChange={(e) => setForm((prev) => ({...prev, verified_by: e.target.value}))}
+                      disabled={isView}
+                      className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
+                    />
+                  </div>
 
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
-                  Verified At
-                </label>
-                <input
-                  type="date"
-                  value={form.verified_at}
-                  onChange={(e) => setForm((prev) => ({...prev, verified_at: e.target.value}))}
-                  disabled={isView}
-                  className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
-                />
-              </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
+                      Verified At
+                    </label>
+                    <input
+                      type="date"
+                      value={form.verified_at}
+                      onChange={(e) => setForm((prev) => ({...prev, verified_at: e.target.value}))}
+                      disabled={isView}
+                      className="h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
+                    />
+                  </div>
 
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
-                  Rejection Reason
-                </label>
-                <textarea
-                  value={form.rejection_reason}
-                  onChange={(e) => setForm((prev) => ({...prev, rejection_reason: e.target.value}))}
-                  disabled={isView}
-                  rows={2}
-                  className="w-full rounded-[6px] border border-black/10 px-3 py-2 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
-                />
-              </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
+                      Rejection Reason
+                    </label>
+                    <textarea
+                      value={form.rejection_reason}
+                      onChange={(e) => setForm((prev) => ({...prev, rejection_reason: e.target.value}))}
+                      disabled={isView}
+                      rows={2}
+                      className="w-full rounded-[6px] border border-black/10 px-3 py-2 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5"
+                    />
+                  </div>
+                </>
+              ) : null}
 
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">NID</label>
