@@ -97,20 +97,6 @@ function mapOwner(r: ApiOwnerRow): OwnerRow {
   };
 }
 
-// UI -> backend mapping (THIS is the fix)
-function uiToApiStatus(s: OwnerStatus) {
-  switch (s) {
-    case 'UNVERIFIED':
-      return 'PENDING';
-    case 'VERIFIED':
-      return 'APPROVED'; //  backend-safe approve value
-    case 'REJECTED':
-      return 'REJECTED';
-    default:
-      return 'PENDING';
-  }
-}
-
 export const ownersRepo: OwnersRepo = {
   async registerOwner(input) {
     const data = await apiJson<any>('/api/station-owners/register', {
@@ -125,42 +111,35 @@ export const ownersRepo: OwnersRepo = {
   },
 
   async listUnverified() {
-    const rows = await apiJson<ApiOwnerRow[]>('/api/station-owners');
-    return rows.map(mapOwner).filter((o) => o.status === 'UNVERIFIED');
+    const rows = await apiJson<ApiOwnerRow[]>('/api/station-owners/unverified');
+    return rows.map(mapOwner);
   },
 
   async listVerified() {
-    const rows = await apiJson<ApiOwnerRow[]>('/api/station-owners');
-    return rows.map(mapOwner).filter((o) => o.status === 'VERIFIED');
+    const rows = await apiJson<ApiOwnerRow[]>('/api/station-owners/verified');
+    return rows.map(mapOwner);
   },
 
   async approve(id) {
-    //  send APPROVED (not VERIFIED)
-    await apiJson(`/api/station-owners/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ verification_status: 'APPROVED', rejection_reason: null }),
+    await apiJson(`/api/station-owners/${id}/approve`, {
+      method: 'POST',
     });
   },
 
   async reject(id) {
-    await apiJson(`/api/station-owners/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        verification_status: 'REJECTED',
-        rejection_reason: 'Rejected by admin',
-      }),
+    await apiJson(`/api/station-owners/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason: 'Rejected by admin' }),
     });
   },
 
   async update(id, input) {
     const payload: any = {};
 
+    if (input.fullName !== undefined) payload.full_name = input.fullName;
+    if (input.phoneNumber !== undefined) payload.phone_number = input.phoneNumber;
+    if (input.email !== undefined) payload.email = input.email;
     if (input.address !== undefined) payload.address = input.address;
-
-    if (input.status) payload.verification_status = uiToApiStatus(input.status);
-
-    if (input.rejectionReason !== undefined)
-      payload.rejection_reason = input.rejectionReason?.trim() || null;
 
     await apiJson(`/api/station-owners/${id}`, {
       method: 'PUT',

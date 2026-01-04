@@ -1,12 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '@/components/ui/modal/Modal';
-import type { OwnerRow, OwnerStatus } from './types';
-
-function cx(...v: Array<string | false | null | undefined>) {
-  return v.filter(Boolean).join(' ');
-}
+import type { OwnerRow } from './types';
 
 export default function EditOwnerModal({
   open,
@@ -19,43 +15,49 @@ export default function EditOwnerModal({
   owner: OwnerRow | null;
   busy: boolean;
   onClose: () => void;
-  onSave: (input: { address: string; status: OwnerStatus; rejectionReason: string }) => void;
+  onSave: (input: { fullName: string; phoneNumber: string; email: string; address: string }) => void;
 }) {
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [status, setStatus] = useState<OwnerStatus>('UNVERIFIED');
-  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     if (!open || !owner) return;
+    setFullName(owner.ownerName ?? '');
+    setPhoneNumber(owner.phone ?? '');
+    setEmail(owner.email ?? '');
     setAddress(owner.address ?? '');
-    setStatus(owner.status ?? 'UNVERIFIED');
-    setRejectionReason('');
   }, [open, owner]);
-
-  const showRejection = useMemo(() => status === 'REJECTED', [status]);
 
   return (
     <Modal open={open} title="Edit Owner" onClose={onClose} maxWidthClassName="max-w-[640px]">
       <div className="p-6 space-y-4">
         <div className="grid gap-3 md:grid-cols-[160px_1fr] items-center">
-          <div className="text-[11px] font-semibold text-[#2B3A4A] md:text-right">Owner</div>
-          <div className="text-[12px] text-[#133374] font-semibold">{owner?.ownerName ?? '-'}</div>
+          <div className="text-[11px] font-semibold text-[#2B3A4A] md:text-right">Full name</div>
+          <input
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
+          />
         </div>
 
         <div className="grid gap-3 md:grid-cols-[160px_1fr] items-center">
-          <div className="text-[11px] font-semibold text-[#2B3A4A] md:text-right">Status</div>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as OwnerStatus)}
-            className={cx(
-              'h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px]',
-              'text-[#2B3A4A] outline-none focus:border-[#009970]'
-            )}
-          >
-            <option value="UNVERIFIED">UNVERIFIED</option>
-            <option value="VERIFIED">VERIFIED</option>
-            <option value="REJECTED">REJECTED</option>
-          </select>
+          <div className="text-[11px] font-semibold text-[#2B3A4A] md:text-right">Phone number</div>
+          <input
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
+          />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[160px_1fr] items-center">
+          <div className="text-[11px] font-semibold text-[#2B3A4A] md:text-right">Email</div>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
+          />
         </div>
 
         <div className="grid gap-3 md:grid-cols-[160px_1fr] items-center">
@@ -66,18 +68,6 @@ export default function EditOwnerModal({
             className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
           />
         </div>
-
-        {showRejection && (
-          <div className="grid gap-3 md:grid-cols-[160px_1fr] items-center">
-            <div className="text-[11px] font-semibold text-[#2B3A4A] md:text-right">Reason</div>
-            <input
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Rejection reason (optional)"
-              className="h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]"
-            />
-          </div>
-        )}
 
         <div className="pt-2 flex justify-end gap-2">
           <button
@@ -91,7 +81,7 @@ export default function EditOwnerModal({
 
           <button
             type="button"
-            onClick={() => onSave({ address, status, rejectionReason })}
+            onClick={() => onSave({ fullName, phoneNumber, email, address })}
             disabled={busy}
             className="h-9 rounded-[8px] bg-[#009970] px-8 text-[12px] font-semibold text-white shadow-sm hover:brightness-110 active:brightness-95 disabled:opacity-60"
           >

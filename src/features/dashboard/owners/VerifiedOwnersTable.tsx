@@ -201,9 +201,10 @@ export default function VerifiedOwnersTable() {
           updateM.mutate({
             id: active.id,
             input: {
+              fullName: input.fullName,
+              phoneNumber: input.phoneNumber,
+              email: input.email,
               address: input.address,
-              status: input.status,
-              rejectionReason: input.rejectionReason,
             },
           });
           setEditOpen(false);

@@ -12,7 +12,8 @@ export type OwnerRow = {
 };
 
 export type UpdateOwnerInput = {
+  fullName?: string;
+  phoneNumber?: string;
+  email?: string;
   address?: string;
-  status?: OwnerStatus;
-  rejectionReason?: string;
 };
