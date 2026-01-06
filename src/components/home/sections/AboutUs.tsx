@@ -42,8 +42,11 @@ export default function AboutUsSection() {
                />
                <h2 className='text-[22px] font-semibold tracking-[0.22em] text-[#203566]'></h2>
                <p className='mt-2 text-[12px] leading-relaxed text-[#7B8EA5]'>
-                  Lorem ipsum dolor sit amet consectetur. Ultrices volutpat
-                  sollicitudin quis at in. In urna fermentum nunc sapien tortor.
+The energy sector plays a vital and strategic role in sustaining Bangladesh’s economic growth and overall development. The uninterrupted supply of petroleum fuels is essential for industry, agriculture, transportation, and daily life, making fuel distribution a cornerstone of national progress. Petroleum dealers, distributors, agents, and petrol pump owners across the country have long been working tirelessly to ensure this continuous supply.
+Bangladesh Petroleum Dealer's, Distributor's, Agent's & Petrol Pump Owner's Association is a nationally representative organization that serves as a unified platform for entrepreneurs and stakeholders engaged in the petroleum fuel distribution system of Bangladesh. The Association is committed to safeguarding the legitimate rights of its members, ensuring safe and consumer-friendly fuel services, and supporting the implementation of government energy policies.
+In the context of changing global energy dynamics, limited domestic resources, and growing demand, the importance of sustainable and alternative fuel solutions has increased significantly. In response, the Association actively collaborates with the government, regulatory authorities, and relevant stakeholders to promote a modern, transparent, and sustainable fuel distribution system.
+With a strong sense of responsibility toward national energy security, investment protection, and ethical business practices, the Association remains dedicated to contributing constructively to the development of Bangladesh’s petroleum and energy sector, both now and in the future.
+
                </p>
             </div>
 
@@ -56,20 +59,7 @@ export default function AboutUsSection() {
                   </h3>
 
                   <p className='mt-3 text-[12px] leading-relaxed text-[#5F6F85]'>
-                     Lorem ipsum dolor sit amet consectetur. Sed facilisis eu
-                     blandit lorem sed interdum pellentesque. Lectus egestas
-                     nibh elementum venenatis hendrerit nullam velit augue eros
-                     vitae amet vitae. Blandit posuere consequat consectetur
-                     tempus. Pulvinar vulputate in nibh natoque mauris nunc.
-                  </p>
-                  <p className='mt-3 text-[12px] leading-relaxed text-[#5F6F85]'>
-                     Vitae nec montes convallis nibh volutpat. Aliquet sit
-                     interdum massa et id placerat nunc ultricies nunc. Mauris
-                     sed aliquam et ut nec. Id non ultrices magna adipiscing et
-                     id. Duis elementum nulla id risus nullam sed. Id sed diam
-                     sit amet fames sed scelerisque leo euismod. Sit sit
-                     condimentum viverra donec nunc nunc euismod sem id. Nibh
-                     sed ultrices id eget volutpat enim maecenas.
+To develop a safe, sustainable and modern fuel supply system in Bangladesh—where the collective participation of petrol pump owners, dealers, distributors and agents ensures a balanced combination of consumer-friendly services, energy security and environmental protection
                   </p>
 
                   {/* stats cards */}
