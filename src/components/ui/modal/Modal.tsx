@@ -65,8 +65,8 @@ export default function Modal({
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
           className={cx(
-            'w-full overflow-hidden rounded-[6px] bg-white',
-            'shadow-[0_25px_80px_rgba(0,0,0,0.45)]',
+            'w-full  rounded-[6px] bg-white',
+            'shadow-[0_25px_80px_rgba(0,0,0,0.45)] overflow-y-scroll min-h-0 max-h-[calc(100dvh-2rem)]',
             maxWidthClassName
           )}
           onClick={(e) => e.stopPropagation()}
