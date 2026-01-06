@@ -54,6 +54,7 @@ export const DASH_NAV: NavItem[] = [
       children: [
          {label: 'Unverified Stations', href: '/manage-stations/unverified'},
          {label: 'Verified Stations', href: '/manage-stations/verified'},
+         {label: 'Create Station', href: '/manage-stations/create-station'},
       ],
    },
 
