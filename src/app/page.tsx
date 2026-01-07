@@ -8,10 +8,12 @@ import WhyChooseUsSection from './../components/home/WhyChooseUsSection';
 import JoinWithUsSection from './../components/home/sections/JoinWithUsSection';
 import ServicesSection from './../components/home/sections/ServicesSection/index';
 import ContactUsSection from './../components/home/sections/ContactUsSection';
+import MembershipPopup from './../components/home/MembershipPopup';
 
 export default function Home() {
    return (
       <div className='w-full'>
+         <MembershipPopup />
          <PageHero
             overlayFrom='top'
             title={
