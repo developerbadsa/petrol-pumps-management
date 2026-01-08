@@ -31,6 +31,26 @@ export async function PUT(req: Request, ctx: Ctx) {
   }
 }
 
+export async function GET(_: Request, ctx: Ctx) {
+  const { id } = await ctx.params;
+
+  try {
+    const data = await laravelFetch<any>(`/station-owners/${id}`, {
+      method: 'GET',
+      auth: true,
+    });
+    return NextResponse.json(data ?? null);
+  } catch (e) {
+    if (e instanceof LaravelHttpError) {
+      return NextResponse.json(
+        { message: e.message, errors: e.errors ?? null },
+        { status: e.status }
+      );
+    }
+    return NextResponse.json({ message: 'Server error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(_: Request, ctx: Ctx) {
   const { id } = await ctx.params;
 

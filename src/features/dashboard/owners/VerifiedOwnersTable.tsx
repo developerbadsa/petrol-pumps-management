@@ -1,6 +1,7 @@
 'use client';
 
 import {useCallback, useMemo, useState} from 'react';
+import {useRouter} from 'next/navigation';
 import TablePanel from '@/components/ui/table-panel/TablePanel';
 import type {ColumnDef} from '@/components/ui/table-panel/types';
 import {Check, Eye, Pencil, Plus, Trash2} from 'lucide-react';
@@ -40,6 +41,7 @@ function ActionDot({
 }
 
 export default function VerifiedOwnersTable() {
+   const router = useRouter();
    const q = useVerifiedOwners();
    const deleteM = useRejectOwner();
    const updateM = useUpdateOwner();
@@ -211,7 +213,7 @@ export default function VerifiedOwnersTable() {
       };
 
       const onVerify = (id: string) => {
-         console.log('Verify/confirm for:', id);
+         router.push(`/manage-owners/verified/${id}`);
       };
 
       const onEdit = (row: OwnerRow) => {
@@ -336,7 +338,7 @@ export default function VerifiedOwnersTable() {
             ),
          },
       ];
-   }, [deleteM, downloadOwnerCard]);
+   }, [deleteM, downloadOwnerCard, router]);
 
    if (q.isLoading) return <Loader label='Loading...' />;
    if (q.isError)
