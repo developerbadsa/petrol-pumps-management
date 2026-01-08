@@ -27,6 +27,7 @@ export default function RegisterOwnerSection() {
          password: '',
          confirmPassword: '',
          residentialAddress: '',
+         profileImage: null,
       },
    });
 
@@ -133,6 +134,17 @@ export default function RegisterOwnerSection() {
                      <input
                         className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 text-[12px] text-[#2B3A4A] outline-none focus:border-[#009970]'
                         {...form.register('residentialAddress')}
+                     />
+                  </FieldRow>
+
+                  <FieldRow
+                     label='Profile Image'
+                     error={form.formState.errors.profileImage?.message}>
+                     <input
+                        type='file'
+                        accept='image/*'
+                        className='h-9 w-full rounded-[8px] border border-black/10 bg-[#F7F9FC] px-3 py-[6px] text-[12px] text-[#2B3A4A] outline-none file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-1 file:text-[11px] file:font-semibold file:text-[#2B3A4A] focus:border-[#009970]'
+                        {...form.register('profileImage')}
                      />
                   </FieldRow>
                </div>
