@@ -47,8 +47,8 @@ export default function VerifiedOwnersTable() {
 
   const downloadOwnerCard = useCallback(async (row: OwnerRow) => {
     const canvas = document.createElement('canvas');
-    const width = 680;
-    const height = 420;
+    const width = 900;
+    const height = 560;
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
@@ -67,75 +67,117 @@ export default function VerifiedOwnersTable() {
         img.src = src;
       });
 
-    const [logo, photo] = await Promise.all([loadImage('/fav.png'), loadImage(row.photoUrl)]);
+    const qrPayload = [
+      `Member ID: ${row.memberId ?? row.id}`,
+      `Name: ${row.ownerName ?? '—'}`,
+      `Phone: ${row.phone ?? '—'}`,
+      `Email: ${row.email ?? '—'}`,
+    ].join('\n');
+
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+      qrPayload,
+    )}`;
+
+    const [logo, photo, qr] = await Promise.all([
+      loadImage('/fav.png'),
+      row.photoUrl?.startsWith('data:image/svg') ? Promise.resolve(null) : loadImage(row.photoUrl),
+      loadImage(qrUrl),
+    ]);
 
     const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, '#E4B85E');
-    bg.addColorStop(0.55, '#C9993D');
-    bg.addColorStop(1, '#B9872C');
+    bg.addColorStop(0, '#F5D68B');
+    bg.addColorStop(0.55, '#D6A750');
+    bg.addColorStop(1, '#BF8B2E');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    for (let i = 0; i < 12; i += 1) {
-      ctx.beginPath();
-      ctx.arc(120 + i * 55, 320 - i * 18, 90, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.fillStyle = '#0B2B6D';
+    ctx.fillRect(0, 0, width, 120);
 
-    ctx.fillStyle = '#12306B';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillText('Bangladesh Petroleum Dealers', 150, 50);
-    ctx.fillText('Distributors, Agents and', 150, 80);
-    ctx.fillText('Petrol Pump Owners Association', 150, 110);
-
-    ctx.fillStyle = '#B3392E';
-    ctx.fillRect(240, 130, 220, 38);
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('Member', 310, 157);
-
-    ctx.fillStyle = '#F5F7FB';
-    ctx.fillRect(40, 150, 120, 140);
-    ctx.strokeStyle = '#1F3B7A';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(40, 150, 120, 140);
-    if (photo) {
-      ctx.drawImage(photo, 45, 155, 110, 130);
-    } else {
-      ctx.fillStyle = '#1F3B7A';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText('Photo', 70, 225);
-    }
+    ctx.font = 'bold 26px "Segoe UI", sans-serif';
+    ctx.fillText('Bangladesh Petroleum Dealers', 150, 42);
+    ctx.font = 'bold 22px "Segoe UI", sans-serif';
+    ctx.fillText('Distributors, Agents and Petrol Pump Owners Association', 150, 74);
+    ctx.font = '16px "Segoe UI", sans-serif';
+    ctx.fillText('Professional Membership Identification Card', 150, 98);
 
     if (logo) {
-      ctx.drawImage(logo, 30, 20, 90, 90);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(80, 60, 46, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.drawImage(logo, 40, 20, 80, 80);
     }
 
-    ctx.fillStyle = '#1F3B7A';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('Member ID:', 190, 225);
-    ctx.font = '16px sans-serif';
-    ctx.fillText(row.memberId ?? '—', 290, 225);
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('Name:', 190, 250);
-    ctx.font = '16px sans-serif';
-    ctx.fillText(row.ownerName ?? '—', 250, 250);
-
-    ctx.fillStyle = '#1F3B7A';
-    ctx.fillRect(430, 210, 170, 170);
+    ctx.fillStyle = '#B3392E';
+    ctx.fillRect(40, 140, 220, 36);
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('QR', 510, 300);
+    ctx.font = 'bold 18px "Segoe UI", sans-serif';
+    ctx.fillText('Member', 115, 165);
 
+    ctx.fillStyle = '#F9FAFB';
+    ctx.fillRect(40, 190, 200, 240);
     ctx.strokeStyle = '#1F3B7A';
-    ctx.beginPath();
-    ctx.moveTo(50, 330);
-    ctx.lineTo(190, 330);
-    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.strokeRect(40, 190, 200, 240);
+    if (photo) {
+      ctx.drawImage(photo, 45, 195, 190, 230);
+    } else {
+      ctx.fillStyle = '#1F3B7A';
+      ctx.font = 'bold 16px "Segoe UI", sans-serif';
+      ctx.fillText('Photo', 110, 320);
+    }
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(270, 140, 590, 290);
+    ctx.strokeStyle = '#1F3B7A';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(270, 140, 590, 290);
+
+    ctx.fillStyle = '#0B2B6D';
+    ctx.font = 'bold 18px "Segoe UI", sans-serif';
+    ctx.fillText('Member Information', 300, 175);
+
     ctx.fillStyle = '#1F3B7A';
-    ctx.font = '12px sans-serif';
-    ctx.fillText('Authorized Signature', 60, 350);
+    ctx.font = 'bold 15px "Segoe UI", sans-serif';
+    ctx.fillText('Member ID', 300, 215);
+    ctx.fillText('Full Name', 300, 255);
+    ctx.fillText('Phone', 300, 295);
+    ctx.fillText('Email', 300, 335);
+    ctx.fillText('Address', 300, 375);
+
+    ctx.fillStyle = '#111827';
+    ctx.font = '15px "Segoe UI", sans-serif';
+    ctx.fillText(row.memberId ?? row.id ?? '—', 440, 215);
+    ctx.fillText(row.ownerName ?? '—', 440, 255);
+    ctx.fillText(row.phone ?? '—', 440, 295);
+    ctx.fillText(row.email ?? '—', 440, 335);
+    ctx.fillText(row.address ?? '—', 440, 375);
+
+    if (qr) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(640, 200, 200, 200);
+      ctx.strokeStyle = '#1F3B7A';
+      ctx.strokeRect(640, 200, 200, 200);
+      ctx.drawImage(qr, 650, 210, 180, 180);
+      ctx.fillStyle = '#1F3B7A';
+      ctx.font = '12px "Segoe UI", sans-serif';
+      ctx.fillText('Scan for verification', 665, 415);
+    }
+
+    ctx.fillStyle = '#0B2B6D';
+    ctx.fillRect(0, 460, width, 100);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '14px "Segoe UI", sans-serif';
+    ctx.fillText('Authorized by: Bangladesh Petroleum Dealers Association', 40, 500);
+    ctx.fillText('This card is non-transferable and remains property of the association.', 40, 525);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.moveTo(640, 520);
+    ctx.lineTo(840, 520);
+    ctx.stroke();
+    ctx.fillText('Authorized Signature', 660, 545);
 
     const link = document.createElement('a');
     link.download = `owner-card-${row.memberId ?? row.id}.png`;

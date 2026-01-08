@@ -87,7 +87,7 @@ function mapStatus(apiStatus: string): OwnerStatus {
 function mapOwner(r: ApiOwnerRow): OwnerRow {
   return {
     id: String(r.id),
-    memberId: undefined,
+    memberId: String(r.id),
     photoUrl: r.profile_image ? toAbs(r.profile_image) : DEFAULT_AVATAR,
     ownerName: r.full_name,
     phone: r.phone_number,
