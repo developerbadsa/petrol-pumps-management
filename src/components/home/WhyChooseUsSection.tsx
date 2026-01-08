@@ -14,7 +14,7 @@ import maskgridbg from './img/Mask group (19).png';
 
 type PillId = 'mission' | 'vision' | 'activities';
 type ContentId = 'who' | PillId;
-
+type BodyContent = string | string[];
 type PillItem = {
    id: PillId;
    label: string;
@@ -228,7 +228,7 @@ const PILL_ITEMS: PillItem[] = [
 
 const CONTENT: Record<
    ContentId,
-   {badge: string; heading: string; body: string; label?: string}
+   {badge: string; heading: string; body: BodyContent; label?: string}
 > = {
    who: {
       badge: '?',
@@ -249,7 +249,15 @@ const CONTENT: Record<
    activities: {
       badge: 'A',
       heading: 'OUR ACTIVITIES',
-      body: "To conduct awareness activities to maintain transparency, discipline and standards in the petroleum product supply system. To monitor and increase awareness on issues related to price, size and quality to ensure consumer-friendly services. To implement safety provisions in petrol pumps and fuel distribution systems and provide training and guidance to prevent fires and accidents. To encourage the use of environmentally friendly and alternative fuels and play a supportive role in implementing the government's energy policy. To organize training, workshops and seminars to improve the skills of members. To take coordinated initiatives with the relevant authorities to maintain normal fuel supply in emergency situations. To present reasonable proposals with policymakers for creating an investment-friendly environment in the energy sector and sustainable development. To encourage members to ensure responsible and ethical business practices in the national interest.",
+  body: [
+    'To increase coordination and cooperation between petrol pump owners, dealers, distributors and agents to ensure the country’s energy security.',
+    'To protect the interests of members and to provide regular communication and advice to the government and regulatory agencies in formulating and amending policies, laws and regulations related to the energy sector.',
+    'To conduct awareness activities to maintain transparency, discipline and standards in the petroleum product supply system.',
+    'To monitor and increase awareness on issues related to price, size and quality to ensure consumer-friendly services.',
+    'To implement safety provisions in petrol pumps and fuel distribution systems and provide training and guidance to prevent fires and accidents.',
+    'To encourage the use of environmentally friendly and alternative fuels and play a supportive role in implementing the government’s energy policy.',
+
+  ],
    },
 };
 
@@ -260,7 +268,7 @@ function ExpandedCardOverlay({
 }: {
    badge: string;
    heading: string;
-   body: string;
+   body: BodyContent;
 }) {
    return (
       <div className='absolute inset-x-0 bottom-0 w-full bg-[#228759da] px-4 sm:px-6 pb-6 pt-5'>
@@ -282,10 +290,17 @@ function ExpandedCardOverlay({
                   {heading}
                </p>
             </div>
-
-            <p className='mt-3 text-[14px] sm:text-[15px] leading-relaxed text-white/90'>
-               {body}
-            </p>
+            {Array.isArray(body) ? (
+               <ul className='mt-3 list-disc pl-5 text-[14px] sm:text-[15px] leading-relaxed text-white/90 space-y-2'>
+                  {body.map((item, idx) => (
+                     <li key={idx}>{item}</li>
+                  ))}
+               </ul>
+            ) : (
+               <p className='mt-3 text-[14px] sm:text-[15px] leading-relaxed text-white/90'>
+                  {body}
+               </p>
+            )}
 
             <button
                type='button'
