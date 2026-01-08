@@ -55,29 +55,30 @@ export default function Footer() {
                         </div>
                      </div>
                      <div className='text-[16px] font-semibold leading-snug tracking-[0.02em] text-white uppercase'>
-                        Bangladesh LPG Autogas
-                        <br />
-                        Station &amp; Conversion Workshop
-                        <br />
-                        Owner&apos;s Association
+                        Bangladesh petroleum dealer's Distributor's Agent's &
+                        Petrol Pump Owner's Association
                      </div>
                   </div>
 
                   <p className='mt-4 text-[18px] leading-[22px] text-white/60'>
-                     We represent LPG autogas stations and conversion workshops
-                     across Bangladesh, working to ensure safety, compliance and
+                     We represent Bangladesh petroleum dealer's Distributor's
+                     Agent's & Petrol Pump Owner's Association across
+                     Bangladesh, working to ensure safety, compliance and
                      sustainable growth of the sector.
                   </p>
 
                   <div className='mt-4 space-y-1 text-[12px] text-white/75'>
                      <div>
-                        <span className='font-semibold'>Address:</span> 2/2 Pallabi, Dhaka, Bangladesh
+                        <span className='font-semibold'>Address:</span> 2/2
+                        Pallabi, Dhaka, Bangladesh
                      </div>
                      <div>
-                        <span className='font-semibold'>Phone:</span> +8801730178288
+                        <span className='font-semibold'>Phone:</span>{' '}
+                        +8801730178288
                      </div>
                      <div>
-                        <span className='font-semibold'>Email:</span>info@lpgautogasbd.com
+                        <span className='font-semibold'>Email:</span>
+                        info@lpgautogasbd.com
                      </div>
                   </div>
                </div>
