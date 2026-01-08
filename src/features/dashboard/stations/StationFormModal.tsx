@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from '@/components/ui/modal/Modal';
-import StationForm, {type Mode} from './StationForm';
+import StationForm, {type Mode, type StationFormDefaults} from './StationForm';
 import type {StationUpsertPayload} from './formData';
 
 export default function StationFormModal({
@@ -12,6 +12,7 @@ export default function StationFormModal({
    error,
    onClose,
    onSubmit,
+   initialValues,
 }: {
    open: boolean;
    mode: Mode;
@@ -20,6 +21,7 @@ export default function StationFormModal({
    error?: string;
    onClose: () => void;
    onSubmit: (payload: StationUpsertPayload) => void;
+   initialValues?: StationFormDefaults;
 }) {
    const title =
       mode === 'create'
@@ -43,6 +45,7 @@ export default function StationFormModal({
                onCancel={onClose}
                onSubmit={onSubmit}
                enabled={open}
+               initialValues={initialValues}
             />
          </div>
       </Modal>

@@ -44,6 +44,17 @@ type FormState = {
    explosive_license: File | null;
 };
 
+export type StationFormDefaults = Partial<
+   Pick<
+      FormState,
+      | 'station_owner_id'
+      | 'station_name'
+      | 'station_address'
+      | 'contact_person_name'
+      | 'contact_person_phone'
+   >
+>;
+
 const emptyForm: FormState = {
    station_owner_id: '',
    station_name: '',
@@ -236,6 +247,7 @@ export default function StationForm({
    onCancel,
    onSubmit,
    enabled = true,
+   initialValues,
 }: {
    mode: Mode;
    stationId?: string | null;
@@ -244,6 +256,7 @@ export default function StationForm({
    onCancel: () => void;
    onSubmit: (payload: StationUpsertPayload) => void;
    enabled?: boolean;
+   initialValues?: StationFormDefaults;
 }) {
    const [form, setForm] = useState<FormState>(emptyForm);
    const isView = mode === 'view';
@@ -290,13 +303,13 @@ export default function StationForm({
    useEffect(() => {
       if (!enabled) return;
       if (mode === 'create') {
-         setForm({...emptyForm, ...createDefaults});
+         setForm({...emptyForm, ...createDefaults, ...initialValues});
          return;
       }
       if (stationDetailsQ.data) {
          setForm(mapStationDetailsToForm(stationDetailsQ.data));
       }
-   }, [enabled, mode, stationDetailsQ.data]);
+   }, [enabled, initialValues, mode, stationDetailsQ.data]);
 
    useEffect(() => {
       const match = ownerOptions.find(o => o.id === form.station_owner_id);

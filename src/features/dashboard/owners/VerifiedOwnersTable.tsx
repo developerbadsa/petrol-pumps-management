@@ -10,6 +10,9 @@ import type {OwnerRow} from './types';
 import {useVerifiedOwners, useRejectOwner, useUpdateOwner} from './queries';
 import EditOwnerModal from './EditOwnerModal';
 import {Download} from 'lucide-react';
+import StationFormModal from '@/features/dashboard/stations/StationFormModal';
+import type {StationFormDefaults} from '@/features/dashboard/stations/StationForm';
+import {useCreateStation} from '@/features/dashboard/stations/verified/queries';
 function cx(...v: Array<string | false | null | undefined>) {
    return v.filter(Boolean).join(' ');
 }
@@ -45,9 +48,14 @@ export default function VerifiedOwnersTable() {
    const q = useVerifiedOwners();
    const deleteM = useRejectOwner();
    const updateM = useUpdateOwner();
+   const createStationM = useCreateStation();
 
    const [editOpen, setEditOpen] = useState(false);
    const [active, setActive] = useState<OwnerRow | null>(null);
+   const [stationOpen, setStationOpen] = useState(false);
+   const [stationDefaults, setStationDefaults] =
+      useState<StationFormDefaults | null>(null);
+   const [stationError, setStationError] = useState('');
 
    const downloadOwnerCard = useCallback(async (row: OwnerRow) => {
       const canvas = document.createElement('canvas');
@@ -208,8 +216,15 @@ export default function VerifiedOwnersTable() {
          void downloadOwnerCard(row);
       };
 
-      const onAddStation = (id: string) => {
-         console.log('Add station for:', id);
+      const onAddStation = (row: OwnerRow) => {
+         setStationDefaults({
+            station_owner_id: row.id,
+            contact_person_name: row.ownerName ?? '',
+            contact_person_phone: row.phone ?? '',
+            station_address: row.address ?? '',
+         });
+         setStationError('');
+         setStationOpen(true);
       };
 
       const onVerify = (id: string) => {
@@ -309,7 +324,7 @@ export default function VerifiedOwnersTable() {
                <div className='flex items-center justify-center gap-2'>
                   <ActionDot
                      title='Add'
-                     onClick={() => onAddStation(r.id)}
+                     onClick={() => onAddStation(r)}
                      bg='bg-[#0E2A66] text-white'>
                      <Plus size={14} />
                   </ActionDot>
@@ -384,6 +399,35 @@ export default function VerifiedOwnersTable() {
                });
                setEditOpen(false);
                setActive(null);
+            }}
+         />
+
+         <StationFormModal
+            open={stationOpen}
+            mode='create'
+            saving={createStationM.isPending}
+            error={stationError}
+            initialValues={stationDefaults ?? undefined}
+            onClose={() => {
+               setStationOpen(false);
+               setStationDefaults(null);
+               setStationError('');
+            }}
+            onSubmit={async payload => {
+               setStationError('');
+
+               const normalizedPayload = {
+                  ...payload,
+                  station_owner_id: payload.station_owner_id ?? undefined,
+               };
+
+               try {
+                  await createStationM.mutateAsync(normalizedPayload as any);
+                  setStationOpen(false);
+                  setStationDefaults(null);
+               } catch (e: any) {
+                  setStationError(e?.message ?? 'Failed to save station');
+               }
             }}
          />
       </div>
