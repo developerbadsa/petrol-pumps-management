@@ -13,17 +13,26 @@ type ApiStationLocation = {
 };
 
 type ApiNonMemberStation = {
-  id: number;
-  station_name: string;
+  station_name?: string;
   station_owner_id?: number;
   verification_status?: string;
+  location?: ApiStationLocation | null;
+};
+
+type ApiNonMemberOwner = {
+  id?: number;
+  full_name?: string;
+  verification_status?: string;
+  gas_stations?: ApiNonMemberStation[];
+  station_name?: string;
+  station_owner_id?: number;
   location?: ApiStationLocation | null;
 };
 
 type ApiNonMemberResponse = {
   current_page?: number;
   from?: number | null;
-  data?: ApiNonMemberStation[];
+  data?: ApiNonMemberOwner[];
 };
 
 type NonMemberRow = {
@@ -66,16 +75,29 @@ export default function NonMembersSection() {
 
   const rows = useMemo<NonMemberRow[]>(() => {
     const items = nonMembersQ.data?.data ?? [];
-    const filtered = items.filter((item) => (item.verification_status ?? '').toUpperCase() !== 'APPROVED');
     const start = nonMembersQ.data?.from ?? 1;
+    const normalized = items.map((item) => {
+      const firstStation = item.gas_stations?.[0];
+      const status = (firstStation?.verification_status ?? item.verification_status ?? 'UNVERIFIED').toString();
+      const location = item.location ?? firstStation?.location ?? null;
+      return {
+        stationName: item.station_name ?? firstStation?.station_name ?? '-',
+        ownerId: item.station_owner_id ?? item.id,
+        status,
+        zone: location?.division ?? '',
+        district: location?.district ?? '',
+        upazila: location?.upazila ?? '',
+      };
+    });
+    const filtered = normalized.filter((item) => item.status.toUpperCase() !== 'APPROVED');
     return filtered.map((station, index) => ({
       sl: start + index,
-      stationName: station.station_name,
-      ownerId: station.station_owner_id ? String(station.station_owner_id) : '-',
-      status: station.verification_status ?? 'UNVERIFIED',
-      zone: station.location?.division ?? '',
-      district: station.location?.district ?? '',
-      upazila: station.location?.upazila ?? '',
+      stationName: station.stationName,
+      ownerId: station.ownerId ? String(station.ownerId) : '-',
+      status: station.status,
+      zone: station.zone,
+      district: station.district,
+      upazila: station.upazila,
     }));
   }, [nonMembersQ.data]);
 
