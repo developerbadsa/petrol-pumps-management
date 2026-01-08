@@ -5,6 +5,7 @@ export type RegisterOwnerInput = {
   password: string;
   confirmPassword: string;
   residentialAddress: string;
+  profileImage?: FileList | null;
 };
 
 export type RegisterOwnerResult = {

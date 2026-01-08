@@ -20,10 +20,28 @@ async function readJsonOrThrow(res: Response) {
 }
 
 export async function registerOwnerRepo(input: RegisterOwnerInput): Promise<RegisterOwnerResult> {
+  const profileImage = input.profileImage?.item(0) ?? null;
+  const body =
+    profileImage != null
+      ? (() => {
+          const payload = new FormData();
+          payload.set('full_name', input.stationOwnerName);
+          payload.set('email', input.email);
+          payload.set('phone_number', input.phone);
+          payload.set('password', input.password);
+          payload.set('address', input.residentialAddress);
+          payload.set('profile_image', profileImage);
+          return payload;
+        })()
+      : JSON.stringify(input);
+
   const res = await fetch('/api/station-owners/register', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(input),
+    headers:
+      body instanceof FormData
+        ? { Accept: 'application/json' }
+        : { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body,
   });
 
   const data = await readJsonOrThrow(res);
