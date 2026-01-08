@@ -283,6 +283,9 @@ export default function StationForm({
       enabled,
    });
 
+   const ownerOptions = ownersQ.data ?? [];
+   const [stationOwnerSearch, setStationOwnerSearch] = useState('');
+
    useEffect(() => {
       if (!enabled) return;
       if (mode === 'create') {
@@ -293,6 +296,14 @@ export default function StationForm({
          setForm(mapStationDetailsToForm(stationDetailsQ.data));
       }
    }, [enabled, mode, stationDetailsQ.data]);
+
+   useEffect(() => {
+      const match = ownerOptions.find(o => o.id === form.station_owner_id);
+      const nextValue = match?.label ?? form.station_owner_id ?? '';
+      if (nextValue !== stationOwnerSearch) {
+         setStationOwnerSearch(nextValue);
+      }
+   }, [form.station_owner_id, ownerOptions, stationOwnerSearch]);
 
    const filteredDistricts = useMemo(() => {
       const divisionId = toNumberOrUndefined(form.division_id);
@@ -389,27 +400,33 @@ export default function StationForm({
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         Station Owner
                      </label>
-                     <select
-                        value={form.station_owner_id}
-                        onChange={e =>
+                     <input
+                        list='station-owner-options'
+                        value={stationOwnerSearch}
+                        onChange={e => {
+                           const value = e.target.value;
+                           setStationOwnerSearch(value);
+                           const match = ownerOptions.find(
+                              o => o.label === value || o.id === value
+                           );
                            setForm(prev => ({
                               ...prev,
-                              station_owner_id: e.target.value,
-                           }))
-                        }
+                              station_owner_id: match ? match.id : value,
+                           }));
+                        }}
                         disabled={isView || ownersQ.isError}
-                        className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'>
-                        <option value=''>
-                           {loadingOptions
+                        placeholder={
+                           loadingOptions
                               ? 'Loading owners...'
-                              : 'Select owner'}
-                        </option>
-                        {(ownersQ.data ?? []).map(o => (
-                           <option key={o.id} value={o.id}>
-                              {o.label}
-                           </option>
+                              : 'Select owner'
+                        }
+                        className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+                     />
+                     <datalist id='station-owner-options'>
+                        {ownerOptions.map(o => (
+                           <option key={o.id} value={o.label} />
                         ))}
-                     </select>
+                     </datalist>
                   </div>
 
                   <div>
