@@ -19,6 +19,11 @@ type StationOwnerOption = {
    label: string;
 };
 
+type DatalistOption = {
+   id: string;
+   label: string;
+};
+
 type FormState = {
    station_owner_id: string;
    station_name: string;
@@ -239,6 +244,57 @@ function toDateOrUndefined(value: string) {
    return trimmed;
 }
 
+function DatalistInput({
+   value,
+   options,
+   onValueChange,
+   disabled,
+   placeholder,
+   listId,
+}: {
+   value: string;
+   options: DatalistOption[];
+   onValueChange: (value: string) => void;
+   disabled?: boolean;
+   placeholder?: string;
+   listId: string;
+}) {
+   const [search, setSearch] = useState('');
+
+   useEffect(() => {
+      const match = options.find(option => option.id === value);
+      const nextValue = match?.label ?? value ?? '';
+      if (nextValue !== search) {
+         setSearch(nextValue);
+      }
+   }, [options, search, value]);
+
+   return (
+      <>
+         <input
+            list={listId}
+            value={search}
+            onChange={e => {
+               const inputValue = e.target.value;
+               setSearch(inputValue);
+               const match = options.find(
+                  option => option.label === inputValue || option.id === inputValue
+               );
+               onValueChange(match ? match.id : inputValue);
+            }}
+            disabled={disabled}
+            placeholder={placeholder}
+            className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+         />
+         <datalist id={listId}>
+            {options.map(option => (
+               <option key={option.id} value={option.label} />
+            ))}
+         </datalist>
+      </>
+   );
+}
+
 export default function StationForm({
    mode,
    stationId,
@@ -299,6 +355,38 @@ export default function StationForm({
 
    const ownerOptions = ownersQ.data ?? [];
    const [stationOwnerSearch, setStationOwnerSearch] = useState('');
+   const divisionOptions = useMemo(
+      () =>
+         (divisionsQ.data ?? []).map(d => ({
+            id: toId(d.id),
+            label: d.name,
+         })),
+      [divisionsQ.data]
+   );
+   const districtOptions = useMemo(
+      () =>
+         filteredDistricts.map(d => ({
+            id: toId(d.id),
+            label: d.districtName,
+         })),
+      [filteredDistricts]
+   );
+   const upazilaOptions = useMemo(
+      () =>
+         filteredUpazilas.map(u => ({
+            id: toId(u.id),
+            label: u.upazilaName,
+         })),
+      [filteredUpazilas]
+   );
+   const statusOptions = useMemo(
+      () => [
+         {id: 'PENDING', label: 'PENDING'},
+         {id: 'APPROVED', label: 'APPROVED'},
+         {id: 'REJECTED', label: 'REJECTED'},
+      ],
+      []
+   );
 
    useEffect(() => {
       if (!enabled) return;
@@ -497,16 +585,18 @@ export default function StationForm({
                         <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                            Station Status
                         </label>
-                        <input
+                        <DatalistInput
                            value={form.station_status}
-                           onChange={e =>
+                           options={statusOptions}
+                           onValueChange={value =>
                               setForm(prev => ({
                                  ...prev,
-                                 station_status: e.target.value,
+                                 station_status: value,
                               }))
                            }
                            disabled={isView}
-                           className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+                           placeholder='Select status'
+                           listId='station-status-options'
                         />
                      </div>
                   ) : null}
@@ -549,84 +639,72 @@ export default function StationForm({
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         Division
                      </label>
-                     <select
+                     <DatalistInput
                         value={form.division_id}
-                        onChange={e =>
+                        options={divisionOptions}
+                        onValueChange={value =>
                            setForm(prev => ({
                               ...prev,
-                              division_id: e.target.value,
+                              division_id: value,
                               district_id: '',
                               upazila_id: '',
                            }))
                         }
                         disabled={isView}
-                        className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'>
-                        <option value=''>
-                           {divisionsQ.isLoading
+                        placeholder={
+                           divisionsQ.isLoading
                               ? 'Loading divisions...'
-                              : 'Select division'}
-                        </option>
-                        {(divisionsQ.data ?? []).map(d => (
-                           <option key={d.id} value={d.id}>
-                              {d.name}
-                           </option>
-                        ))}
-                     </select>
+                              : 'Select division'
+                        }
+                        listId='division-options'
+                     />
                   </div>
 
                   <div>
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         District
                      </label>
-                     <select
+                     <DatalistInput
                         value={form.district_id}
-                        onChange={e =>
+                        options={districtOptions}
+                        onValueChange={value =>
                            setForm(prev => ({
                               ...prev,
-                              district_id: e.target.value,
+                              district_id: value,
                               upazila_id: '',
                            }))
                         }
                         disabled={isView}
-                        className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'>
-                        <option value=''>
-                           {districtsQ.isLoading
+                        placeholder={
+                           districtsQ.isLoading
                               ? 'Loading districts...'
-                              : 'Select district'}
-                        </option>
-                        {filteredDistricts.map(d => (
-                           <option key={d.id} value={d.id}>
-                              {d.districtName}
-                           </option>
-                        ))}
-                     </select>
+                              : 'Select district'
+                        }
+                        listId='district-options'
+                     />
                   </div>
 
                   <div>
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         Upazila
                      </label>
-                     <select
+                     <DatalistInput
                         value={form.upazila_id}
-                        onChange={e =>
+                        options={upazilaOptions}
+                        onValueChange={value =>
                            setForm(prev => ({
                               ...prev,
-                              upazila_id: e.target.value,
+                              upazila_id: value,
                            }))
                         }
                         disabled={isView}
-                        className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'>
-                        <option value=''>
-                           {upazilasQ.isLoading
+                        placeholder={
+                           upazilasQ.isLoading
                               ? 'Loading upazilas...'
-                              : 'Select upazila'}
-                        </option>
-                        {filteredUpazilas.map(u => (
-                           <option key={u.id} value={u.id}>
-                              {u.upazilaName}
-                           </option>
-                        ))}
-                     </select>
+                              : 'Select upazila'
+                        }
+                        listId='upazila-options'
+                     />
                   </div>
 
                   <div className='md:col-span-2'>
@@ -738,20 +816,19 @@ export default function StationForm({
                            <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                               Verification Status
                            </label>
-                           <select
+                           <DatalistInput
                               value={form.verification_status}
-                              onChange={e =>
+                              options={statusOptions}
+                              onValueChange={value =>
                                  setForm(prev => ({
                                     ...prev,
-                                    verification_status: e.target.value,
+                                    verification_status: value,
                                  }))
                               }
                               disabled={isView}
-                              className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'>
-                              <option value='PENDING'>PENDING</option>
-                              <option value='APPROVED'>APPROVED</option>
-                              <option value='REJECTED'>REJECTED</option>
-                           </select>
+                              placeholder='Select status'
+                              listId='verification-status-options'
+                           />
                         </div>
 
                         <div>
