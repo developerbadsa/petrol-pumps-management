@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import TablePanel from '@/components/ui/table-panel/TablePanel';
 import type { ColumnDef } from '@/components/ui/table-panel/types';
 import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -45,10 +45,107 @@ export default function VerifiedOwnersTable() {
   const [editOpen, setEditOpen] = useState(false);
   const [active, setActive] = useState<OwnerRow | null>(null);
 
+  const downloadOwnerCard = useCallback(async (row: OwnerRow) => {
+    const canvas = document.createElement('canvas');
+    const width = 680;
+    const height = 420;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const loadImage = (src?: string) =>
+      new Promise<HTMLImageElement | null>((resolve) => {
+        if (!src) {
+          resolve(null);
+          return;
+        }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+
+    const [logo, photo] = await Promise.all([loadImage('/fav.png'), loadImage(row.photoUrl)]);
+
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#E4B85E');
+    bg.addColorStop(0.55, '#C9993D');
+    bg.addColorStop(1, '#B9872C');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    for (let i = 0; i < 12; i += 1) {
+      ctx.beginPath();
+      ctx.arc(120 + i * 55, 320 - i * 18, 90, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#12306B';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('Bangladesh Petroleum Dealers', 150, 50);
+    ctx.fillText('Distributors, Agents and', 150, 80);
+    ctx.fillText('Petrol Pump Owners Association', 150, 110);
+
+    ctx.fillStyle = '#B3392E';
+    ctx.fillRect(240, 130, 220, 38);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('Member', 310, 157);
+
+    ctx.fillStyle = '#F5F7FB';
+    ctx.fillRect(40, 150, 120, 140);
+    ctx.strokeStyle = '#1F3B7A';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(40, 150, 120, 140);
+    if (photo) {
+      ctx.drawImage(photo, 45, 155, 110, 130);
+    } else {
+      ctx.fillStyle = '#1F3B7A';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('Photo', 70, 225);
+    }
+
+    if (logo) {
+      ctx.drawImage(logo, 30, 20, 90, 90);
+    }
+
+    ctx.fillStyle = '#1F3B7A';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('Member ID:', 190, 225);
+    ctx.font = '16px sans-serif';
+    ctx.fillText(row.memberId ?? '—', 290, 225);
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('Name:', 190, 250);
+    ctx.font = '16px sans-serif';
+    ctx.fillText(row.ownerName ?? '—', 250, 250);
+
+    ctx.fillStyle = '#1F3B7A';
+    ctx.fillRect(430, 210, 170, 170);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('QR', 510, 300);
+
+    ctx.strokeStyle = '#1F3B7A';
+    ctx.beginPath();
+    ctx.moveTo(50, 330);
+    ctx.lineTo(190, 330);
+    ctx.stroke();
+    ctx.fillStyle = '#1F3B7A';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Authorized Signature', 60, 350);
+
+    const link = document.createElement('a');
+    link.download = `owner-card-${row.memberId ?? row.id}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, []);
+
   const columns = useMemo<ColumnDef<OwnerRow>[]>(() => {
-    const onPrint = (id: string) => {
-      window.open(`/mock/invoice-sample.pdf`, '_blank', 'noopener,noreferrer');
-      console.log('Print member section for:', id);
+    const onPrint = (row: OwnerRow) => {
+      void downloadOwnerCard(row);
     };
 
     const onAddUpazila = (id: string) => {
@@ -132,10 +229,10 @@ export default function VerifiedOwnersTable() {
         cell: (r) => (
           <button
             type="button"
-            onClick={() => onPrint(r.id)}
+            onClick={() => onPrint(r)}
             className="h-7 rounded-[6px] bg-[#DCE6FF] px-4 text-[11px] font-semibold text-[#2D5BFF] shadow-sm hover:brightness-105 active:brightness-95"
           >
-            Print
+            Download Card
           </button>
         ),
       },
@@ -168,7 +265,7 @@ export default function VerifiedOwnersTable() {
         ),
       },
     ];
-  }, [deleteM]);
+  }, [deleteM, downloadOwnerCard]);
 
   if (q.isLoading) return <Loader label="Loading..." />;
   if (q.isError) return <div className="text-sm text-red-600">Failed to load owners.</div>;
