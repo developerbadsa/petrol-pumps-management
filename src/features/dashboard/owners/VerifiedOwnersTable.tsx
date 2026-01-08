@@ -45,151 +45,12 @@ export default function VerifiedOwnersTable() {
   const [editOpen, setEditOpen] = useState(false);
   const [active, setActive] = useState<OwnerRow | null>(null);
 
-  const downloadOwnerCard = useCallback(async (row: OwnerRow) => {
-    const canvas = document.createElement('canvas');
-    const width = 900;
-    const height = 560;
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const loadImage = (src?: string) =>
-      new Promise<HTMLImageElement | null>((resolve) => {
-        if (!src) {
-          resolve(null);
-          return;
-        }
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = src;
-      });
-
-    const qrPayload = [
-      `Member ID: ${row.memberId ?? row.id}`,
-      `Name: ${row.ownerName ?? '—'}`,
-      `Phone: ${row.phone ?? '—'}`,
-      `Email: ${row.email ?? '—'}`,
-    ].join('\n');
-
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-      qrPayload,
-    )}`;
-
-    const [logo, photo, qr] = await Promise.all([
-      loadImage('/fav.png'),
-      row.photoUrl?.startsWith('data:image/svg') ? Promise.resolve(null) : loadImage(row.photoUrl),
-      loadImage(qrUrl),
-    ]);
-
-    const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, '#F5D68B');
-    bg.addColorStop(0.55, '#D6A750');
-    bg.addColorStop(1, '#BF8B2E');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.fillStyle = '#0B2B6D';
-    ctx.fillRect(0, 0, width, 120);
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 26px "Segoe UI", sans-serif';
-    ctx.fillText('Bangladesh Petroleum Dealers', 150, 42);
-    ctx.font = 'bold 22px "Segoe UI", sans-serif';
-    ctx.fillText('Distributors, Agents and Petrol Pump Owners Association', 150, 74);
-    ctx.font = '16px "Segoe UI", sans-serif';
-    ctx.fillText('Professional Membership Identification Card', 150, 98);
-
-    if (logo) {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.arc(80, 60, 46, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.drawImage(logo, 40, 20, 80, 80);
-    }
-
-    ctx.fillStyle = '#B3392E';
-    ctx.fillRect(40, 140, 220, 36);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 18px "Segoe UI", sans-serif';
-    ctx.fillText('Member', 115, 165);
-
-    ctx.fillStyle = '#F9FAFB';
-    ctx.fillRect(40, 190, 200, 240);
-    ctx.strokeStyle = '#1F3B7A';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(40, 190, 200, 240);
-    if (photo) {
-      ctx.drawImage(photo, 45, 195, 190, 230);
-    } else {
-      ctx.fillStyle = '#1F3B7A';
-      ctx.font = 'bold 16px "Segoe UI", sans-serif';
-      ctx.fillText('Photo', 110, 320);
-    }
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(270, 140, 590, 290);
-    ctx.strokeStyle = '#1F3B7A';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(270, 140, 590, 290);
-
-    ctx.fillStyle = '#0B2B6D';
-    ctx.font = 'bold 18px "Segoe UI", sans-serif';
-    ctx.fillText('Member Information', 300, 175);
-
-    ctx.fillStyle = '#1F3B7A';
-    ctx.font = 'bold 15px "Segoe UI", sans-serif';
-    ctx.fillText('Member ID', 300, 215);
-    ctx.fillText('Full Name', 300, 255);
-    ctx.fillText('Phone', 300, 295);
-    ctx.fillText('Email', 300, 335);
-    ctx.fillText('Address', 300, 375);
-
-    ctx.fillStyle = '#111827';
-    ctx.font = '15px "Segoe UI", sans-serif';
-    ctx.fillText(row.memberId ?? row.id ?? '—', 440, 215);
-    ctx.fillText(row.ownerName ?? '—', 440, 255);
-    ctx.fillText(row.phone ?? '—', 440, 295);
-    ctx.fillText(row.email ?? '—', 440, 335);
-    ctx.fillText(row.address ?? '—', 440, 375);
-
-    if (qr) {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(640, 200, 200, 200);
-      ctx.strokeStyle = '#1F3B7A';
-      ctx.strokeRect(640, 200, 200, 200);
-      ctx.drawImage(qr, 650, 210, 180, 180);
-      ctx.fillStyle = '#1F3B7A';
-      ctx.font = '12px "Segoe UI", sans-serif';
-      ctx.fillText('Scan for verification', 665, 415);
-    }
-
-    ctx.fillStyle = '#0B2B6D';
-    ctx.fillRect(0, 460, width, 100);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '14px "Segoe UI", sans-serif';
-    ctx.fillText('Authorized by: Bangladesh Petroleum Dealers Association', 40, 500);
-    ctx.fillText('This card is non-transferable and remains property of the association.', 40, 525);
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.moveTo(640, 520);
-    ctx.lineTo(840, 520);
-    ctx.stroke();
-    ctx.fillText('Authorized Signature', 660, 545);
-
-    const link = document.createElement('a');
-    link.download = `owner-card-${row.memberId ?? row.id}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  const onPrint = useCallback(async (row: OwnerRow) => {
+    const mod = await import('@/features/owners/print/id-card/downloadOwnerIdCardPng');
+    await mod.downloadOwnerIdCardPng(row);
   }, []);
 
   const columns = useMemo<ColumnDef<OwnerRow>[]>(() => {
-    const onPrint = (row: OwnerRow) => {
-      void downloadOwnerCard(row);
-    };
-
     const onAddUpazila = (id: string) => {
       console.log('Add upazila for:', id);
     };
@@ -271,7 +132,7 @@ export default function VerifiedOwnersTable() {
         cell: (r) => (
           <button
             type="button"
-            onClick={() => onPrint(r)}
+            onClick={() => void onPrint(r)}
             className="h-7 rounded-[6px] bg-[#DCE6FF] px-4 text-[11px] font-semibold text-[#2D5BFF] shadow-sm hover:brightness-105 active:brightness-95"
           >
             Download Card
@@ -307,7 +168,7 @@ export default function VerifiedOwnersTable() {
         ),
       },
     ];
-  }, [deleteM, downloadOwnerCard]);
+  }, [deleteM, onPrint]);
 
   if (q.isLoading) return <Loader label="Loading..." />;
   if (q.isError) return <div className="text-sm text-red-600">Failed to load owners.</div>;
