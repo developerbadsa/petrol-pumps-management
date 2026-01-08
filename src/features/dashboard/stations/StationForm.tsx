@@ -10,6 +10,7 @@ import {upazilaRepo} from '@/features/dashboard/settings/upazila-thana/repo';
 import {otherBusinessesRepo} from '@/features/dashboard/settings/other-businesses/repo';
 import {getStationDetailsRepo} from './verified/repo';
 import type {StationUpsertPayload} from './formData';
+import {CloudUpload} from 'lucide-react';
 
 export type Mode = 'create' | 'edit' | 'view';
 
@@ -416,9 +417,7 @@ export default function StationForm({
                         }}
                         disabled={isView || ownersQ.isError}
                         placeholder={
-                           loadingOptions
-                              ? 'Loading owners...'
-                              : 'Select owner'
+                           loadingOptions ? 'Loading owners...' : 'Select owner'
                         }
                         className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
                      />
@@ -709,10 +708,7 @@ export default function StationForm({
                                              ? prev.other_businesses.filter(
                                                   id => id !== b.id
                                                )
-                                             : [
-                                                  ...prev.other_businesses,
-                                                  b.id,
-                                               ],
+                                             : [...prev.other_businesses, b.id],
                                        }))
                                     }
                                  />
@@ -800,60 +796,123 @@ export default function StationForm({
                      </>
                   ) : null}
 
+                  {/* NID */}
                   <div>
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         NID
                      </label>
-                     <input
-                        type='file'
-                        disabled={isView}
-                        onChange={e =>
-                           setForm(prev => ({
-                              ...prev,
-                              nid: e.target.files?.[0] ?? null,
-                           }))
-                        }
-                        className='block w-full text-[12px] text-[#2B3A4A]'
-                     />
+
+                     <div
+                        className={[
+                           'relative flex w-full items-center gap-2 rounded-[10px] border bg-white px-3 py-2',
+                           'border-[#D6DFEE] focus-within:border-[#019769] focus-within:ring-2 focus-within:ring-[#019769]/15',
+                           isView ? 'opacity-60' : '',
+                        ].join(' ')}>
+                        <CloudUpload className='h-4 w-4 text-[#019769]' />
+
+                        <span className='flex-1 truncate text-[12px] text-[#2B3A4A]'>
+                           {form.nid?.name ?? 'Choose file to upload'}
+                        </span>
+
+                        <span className='rounded-full bg-[#F3F6FB] px-3 py-1 text-[11px] font-semibold text-[#173A7A]'>
+                           Browse
+                        </span>
+
+                        <input
+                           type='file'
+                           disabled={isView}
+                           accept='.pdf,.jpg,.jpeg,.png'
+                           onChange={e =>
+                              setForm(prev => ({
+                                 ...prev,
+                                 nid: e.target.files?.[0] ?? null,
+                              }))
+                           }
+                           className='absolute inset-0 cursor-pointer opacity-0'
+                        />
+                     </div>
                   </div>
 
+                  {/* TIN */}
                   <div>
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         TIN
                      </label>
-                     <input
-                        type='file'
-                        disabled={isView}
-                        onChange={e =>
-                           setForm(prev => ({
-                              ...prev,
-                              tin: e.target.files?.[0] ?? null,
-                           }))
-                        }
-                        className='block w-full text-[12px] text-[#2B3A4A]'
-                     />
+
+                     <div
+                        className={[
+                           'relative flex w-full items-center gap-2 rounded-[10px] border bg-white px-3 py-2',
+                           'border-[#D6DFEE] focus-within:border-[#019769] focus-within:ring-2 focus-within:ring-[#019769]/15',
+                           isView ? 'opacity-60' : '',
+                        ].join(' ')}>
+                        <CloudUpload className='h-4 w-4 text-[#019769]' />
+
+                        <span className='flex-1 truncate text-[12px] text-[#2B3A4A]'>
+                           {form.tin?.name ?? 'Choose file to upload'}
+                        </span>
+
+                        <span className='rounded-full bg-[#F3F6FB] px-3 py-1 text-[11px] font-semibold text-[#173A7A]'>
+                           Browse
+                        </span>
+
+                        <input
+                           type='file'
+                           disabled={isView}
+                           accept='.pdf,.jpg,.jpeg,.png'
+                           onChange={e =>
+                              setForm(prev => ({
+                                 ...prev,
+                                 tin: e.target.files?.[0] ?? null,
+                              }))
+                           }
+                           className='absolute inset-0 cursor-pointer opacity-0'
+                        />
+                     </div>
                   </div>
 
+                  {/* Explosive License */}
                   <div>
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         Explosive License
                      </label>
-                     <input
-                        type='file'
-                        disabled={isView}
-                        onChange={e =>
-                           setForm(prev => ({
-                              ...prev,
-                              explosive_license: e.target.files?.[0] ?? null,
-                           }))
-                        }
-                        className='block w-full text-[12px] text-[#2B3A4A]'
-                     />
+
+                     <div
+                        className={[
+                           'relative flex w-full items-center gap-2 rounded-[10px] border bg-white px-3 py-2',
+                           'border-[#D6DFEE] focus-within:border-[#019769] focus-within:ring-2 focus-within:ring-[#019769]/15',
+                           isView ? 'opacity-60' : '',
+                        ].join(' ')}>
+                        <CloudUpload className='h-4 w-4 text-[#019769]' />
+
+                        <span className='flex-1 truncate text-[12px] text-[#2B3A4A]'>
+                           {form.explosive_license?.name ??
+                              'Choose file to upload'}
+                        </span>
+
+                        <span className='rounded-full bg-[#F3F6FB] px-3 py-1 text-[11px] font-semibold text-[#173A7A]'>
+                           Browse
+                        </span>
+
+                        <input
+                           type='file'
+                           disabled={isView}
+                           accept='.pdf,.jpg,.jpeg,.png'
+                           onChange={e =>
+                              setForm(prev => ({
+                                 ...prev,
+                                 explosive_license: e.target.files?.[0] ?? null,
+                              }))
+                           }
+                           className='absolute inset-0 cursor-pointer opacity-0'
+                        />
+                     </div>
                   </div>
                </div>
 
                {error ? (
-                  <p className='text-[12px] font-medium text-red-600'>{error}</p>
+                  <p className='text-[12px] font-medium text-red-600'>
+                     {error}
+                  </p>
                ) : null}
 
                <div className='mt-4 flex justify-end gap-2'>
