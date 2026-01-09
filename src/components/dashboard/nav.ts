@@ -77,6 +77,12 @@ export const DASH_NAV: NavItem[] = [
          {label: 'POPUP Ads', href: '/multimedia/popup-ads'},
       ],
    },
+   {
+      key: 'membership-form',
+      label: 'Membership Form',
+      href: '/dashboard/membership-form',
+      icon: User,
+   },
 
    {key: 'notices', label: 'Notices', href: '/dashboard-notices', icon: Bell},
    {
