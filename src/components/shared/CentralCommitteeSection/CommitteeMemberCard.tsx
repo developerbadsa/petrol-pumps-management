@@ -47,12 +47,12 @@ export default function CommitteeMemberCard({
             rounded-full border-[6px] border-[#60B13D] bg-white
             sm:h-[170px] sm:w-[170px]
           '>
-               <div className='relative h-[120px] w-[120px] overflow-hidden rounded-full bg-white sm:h-[146px] sm:w-[146px]'>
+               <div className='relative h-[120px] w-[120px] overflow-hidden rounded-full bg-white sm:h-[157px] sm:w-[157px]'>
                   <Image
                      src={member.photo}
                      alt={member.name}
                      fill
-                     sizes='146px'
+                     sizes='152px'
                      className='object-cover'
                   />
                </div>
@@ -61,7 +61,7 @@ export default function CommitteeMemberCard({
 
          {/* name + description */}
          <div className='mt-6 text-center min-h-[90px] overflow-hidden flex flex-col justify-evenly md:min-h-[100px]'>
-            <h3 className='text-[13px] font-semibold uppercase tracking-[0.14em] text-[#153976]'>
+            <h3 className='text-[13px] font-semibold uppercase tracking-[0.1em] text-[#153976]'>
                {member.name}
             </h3>
 

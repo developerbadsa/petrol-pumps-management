@@ -7,12 +7,22 @@ import {Logo} from './../ui/Logo';
 import {useAuth} from '@/features/auth/AuthProvider';
 import {Menu, X} from 'lucide-react';
 
-type NavChild = {label: string; href: string};
+type NavChild = {label: string; href: string; action?: () => void};
 type NavItem = {
    key: string;
    label: string;
    href: string;
    children?: NavChild[];
+};
+
+const downloadFile = (url: string, filename?: string) => {
+   const a = document.createElement('a');
+   a.href = url;
+   a.download = filename ?? '';
+   a.rel = 'noopener';
+   document.body.appendChild(a);
+   a.click();
+   a.remove();
 };
 
 const MAIN_NAV: NavItem[] = [
@@ -54,6 +64,15 @@ const MAIN_NAV: NavItem[] = [
          // {label: 'On Going LPG Stations', href: '/members/on-going-stations'},
          {label: 'Total Station List', href: '/members/total-stations'},
          {label: 'Membership Fees', href: '/members/membership-fees'},
+         {
+            label: 'Download Membership Form',
+            href: '/files/membership-form.pdf',
+            action: () =>
+               downloadFile(
+                  '/files/membership-form.pdf',
+                  'membership-form.pdf'
+               ),
+         },
       ],
    },
    {key: 'contact', label: 'CONTACT', href: '/contact'},
@@ -254,17 +273,31 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
                                     <div className='dropdown-panel'>
                                        <ul className='dropdown-list'>
                                           {item.children!.map(child => (
-                                             <li key={child.href}>
-                                                <Link
-                                                   href={child.href}
-                                                   prefetch={false}
-                                                   className='dropdown-item'
-                                                   role='menuitem'
-                                                   onClick={() =>
-                                                      closeDropdowns()
-                                                   }>
-                                                   {child.label}
-                                                </Link>
+                                             <li
+                                                key={child.href ?? child.label}>
+                                                {child.action ? (
+                                                   <button
+                                                      type='button'
+                                                      className='dropdown-item w-full text-left'
+                                                      role='menuitem'
+                                                      onClick={() => {
+                                                         child.action?.();
+                                                         closeDropdowns();
+                                                      }}>
+                                                      {child.label}
+                                                   </button>
+                                                ) : (
+                                                   <Link
+                                                      href={child.href}
+                                                      prefetch={false}
+                                                      className='dropdown-item'
+                                                      role='menuitem'
+                                                      onClick={() =>
+                                                         closeDropdowns()
+                                                      }>
+                                                      {child.label}
+                                                   </Link>
+                                                )}
                                              </li>
                                           ))}
                                        </ul>
@@ -344,15 +377,30 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
 
                               {item.children && (
                                  <div className='ml-3 flex flex-col gap-1'>
-                                    {item.children.map(child => (
-                                       <Link
-                                          key={child.href}
-                                          href={child.href}
-                                          onClick={() => setMobileOpen(false)}
-                                          className='text-[10px] font-medium uppercase tracking-[0.14em] text-[#6B7280]'>
-                                          {child.label}
-                                       </Link>
-                                    ))}
+                                    {item.children.map(child =>
+                                       child.action ? (
+                                          <button
+                                             key={child.href ?? child.label}
+                                             type='button'
+                                             onClick={() => {
+                                                setMobileOpen(false);
+                                                child.action?.();
+                                             }}
+                                             className='text-left text-[10px] font-medium uppercase tracking-[0.14em] text-[#6B7280]'>
+                                             {child.label}
+                                          </button>
+                                       ) : (
+                                          <Link
+                                             key={child.href}
+                                             href={child.href}
+                                             onClick={() =>
+                                                setMobileOpen(false)
+                                             }
+                                             className='text-[10px] font-medium uppercase tracking-[0.14em] text-[#6B7280]'>
+                                             {child.label}
+                                          </Link>
+                                       )
+                                    )}
                                  </div>
                               )}
                            </div>

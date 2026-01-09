@@ -59,13 +59,13 @@ export default function MembershipFormSection() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Link
+            {/* <Link
               href="/dashboard-downloads"
               className="inline-flex h-9 items-center gap-2 rounded-[6px] border border-[#CFE1F5] bg-white px-3 text-[11px] font-semibold text-[#133374] shadow-sm hover:bg-[#F5F8FF]"
             >
               <FileText size={14} />
               Downloads
-            </Link>
+            </Link> */}
             <a
               href="/files/membership-form.pdf"
               target="_blank"
