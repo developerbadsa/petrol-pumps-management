@@ -2,9 +2,7 @@ import StationUpsertSection from '@/features/dashboard/stations/upsert/StationUp
 
 type PageProps = {
    params: Promise<{id: string}>;
-   searchParams?: {
-      returnTo?: string;
-   };
+   searchParams?: Promise<{returnTo?: string}>;
 };
 
 export default async function EditStationPage({
@@ -12,8 +10,9 @@ export default async function EditStationPage({
    searchParams,
 }: PageProps) {
    const {id} = await params;
-   const returnTo = searchParams?.returnTo
-      ? decodeURIComponent(searchParams.returnTo)
+   const resolvedSearchParams = await searchParams;
+   const returnTo = resolvedSearchParams?.returnTo
+      ? decodeURIComponent(resolvedSearchParams.returnTo)
       : undefined;
 
    return (
