@@ -11,20 +11,25 @@ type PageProps = {
    };
 };
 
+function decodeParam(value?: string) {
+   if (!value) return undefined;
+   return decodeURIComponent(value.replace(/\+/g, ' '));
+}
+
 export default function CreateStationPage({searchParams}: PageProps) {
    const defaults: StationFormDefaults = {};
 
-   if (searchParams?.ownerId) defaults.station_owner_id = searchParams.ownerId;
-   if (searchParams?.ownerName)
-      defaults.contact_person_name = searchParams.ownerName;
-   if (searchParams?.ownerPhone)
-      defaults.contact_person_phone = searchParams.ownerPhone;
-   if (searchParams?.ownerAddress)
-      defaults.station_address = searchParams.ownerAddress;
+   const ownerId = decodeParam(searchParams?.ownerId);
+   const ownerName = decodeParam(searchParams?.ownerName);
+   const ownerPhone = decodeParam(searchParams?.ownerPhone);
+   const ownerAddress = decodeParam(searchParams?.ownerAddress);
 
-   const returnTo = searchParams?.returnTo
-      ? decodeURIComponent(searchParams.returnTo)
-      : undefined;
+   if (ownerId) defaults.station_owner_id = ownerId;
+   if (ownerName) defaults.contact_person_name = ownerName;
+   if (ownerPhone) defaults.contact_person_phone = ownerPhone;
+   if (ownerAddress) defaults.station_address = ownerAddress;
+
+   const returnTo = decodeParam(searchParams?.returnTo);
 
    return <CreateStationSection initialValues={defaults} returnTo={returnTo} />;
 }
