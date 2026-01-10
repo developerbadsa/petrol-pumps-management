@@ -59,10 +59,6 @@ export default function VerifiedOwnersTable() {
 
    const downloadOwnerCard = useCallback(async (row: OwnerRow) => {
       const canvas = document.createElement('canvas');
-      const width = 900;
-      const height = 560;
-      canvas.width = width;
-      canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -79,131 +75,164 @@ export default function VerifiedOwnersTable() {
             img.src = src;
          });
 
-      const qrPayload = [
-         `Member ID: ${row.memberId ?? row.id}`,
-         `Name: ${row.ownerName ?? '—'}`,
-         `Phone: ${row.phone ?? '—'}`,
-         `Email: ${row.email ?? '—'}`,
-      ].join('\n');
+      const resolvePhotoUrl = (url?: string) => {
+         if (!url) return undefined;
+         if (url.startsWith('data:image/svg')) return undefined;
+         if (/^https?:\/\//i.test(url)) {
+            return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+         }
+         return url;
+      };
 
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-         qrPayload
-      )}`;
-
-      const [logo, photo, qr] = await Promise.all([
-         loadImage('/fav.png'),
-         row.photoUrl?.startsWith('data:image/svg')
-            ? Promise.resolve(null)
-            : loadImage(row.photoUrl),
-         loadImage(qrUrl),
+      const [card, photo] = await Promise.all([
+         loadImage('/id-card/ID.jpg'),
+         loadImage(resolvePhotoUrl(row.photoUrl)),
       ]);
 
-      const bg = ctx.createLinearGradient(0, 0, width, height);
-      bg.addColorStop(0, '#F5D68B');
-      bg.addColorStop(0.55, '#D6A750');
-      bg.addColorStop(1, '#BF8B2E');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, width, height);
+      const width = card?.width ?? 900;
+      const height = card?.height ?? 560;
+      canvas.width = width;
+      canvas.height = height;
 
-      ctx.fillStyle = '#0B2B6D';
-      ctx.fillRect(0, 0, width, 120);
-
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 26px "Segoe UI", sans-serif';
-      ctx.fillText('Bangladesh Petroleum Dealers', 150, 42);
-      ctx.font = 'bold 22px "Segoe UI", sans-serif';
-      ctx.fillText(
-         'Distributors, Agents and Petrol Pump Owners Association',
-         150,
-         74
-      );
-      ctx.font = '16px "Segoe UI", sans-serif';
-      ctx.fillText('Professional Membership Identification Card', 150, 98);
-
-      if (logo) {
-         ctx.fillStyle = '#FFFFFF';
-         ctx.beginPath();
-         ctx.arc(80, 60, 46, 0, Math.PI * 2);
-         ctx.fill();
-         ctx.drawImage(logo, 40, 20, 80, 80);
-      }
-
-      ctx.fillStyle = '#B3392E';
-      ctx.fillRect(40, 140, 220, 36);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 18px "Segoe UI", sans-serif';
-      ctx.fillText('Member', 115, 165);
-
-      ctx.fillStyle = '#F9FAFB';
-      ctx.fillRect(40, 190, 200, 240);
-      ctx.strokeStyle = '#1F3B7A';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(40, 190, 200, 240);
-      if (photo) {
-         ctx.drawImage(photo, 45, 195, 190, 230);
+      if (card) {
+         ctx.drawImage(card, 0, 0, width, height);
       } else {
-         ctx.fillStyle = '#1F3B7A';
-         ctx.font = 'bold 16px "Segoe UI", sans-serif';
-         ctx.fillText('Photo', 110, 320);
+         ctx.fillStyle = '#F3F4F6';
+         ctx.fillRect(0, 0, width, height);
       }
 
+      const frontHeight = height / 2;
+      const nameText = row.ownerName ?? '—';
+      const memberIdText = row.memberId ?? row.id ?? '—';
+
+      const drawRoundedRect = (
+         x: number,
+         y: number,
+         w: number,
+         h: number,
+         r: number
+      ) => {
+         ctx.beginPath();
+         ctx.moveTo(x + r, y);
+         ctx.lineTo(x + w - r, y);
+         ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+         ctx.lineTo(x + w, y + h - r);
+         ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+         ctx.lineTo(x + r, y + h);
+         ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+         ctx.lineTo(x, y + r);
+         ctx.quadraticCurveTo(x, y, x + r, y);
+         ctx.closePath();
+      };
+
+      const drawFittedText = (
+         text: string,
+         x: number,
+         y: number,
+         maxWidth: number,
+         fontWeight: number,
+         fontSize: number
+      ) => {
+         let size = fontSize;
+         ctx.font = `${fontWeight} ${size}px "Segoe UI", sans-serif`;
+         while (ctx.measureText(text).width > maxWidth && size > 12) {
+            size -= 1;
+            ctx.font = `${fontWeight} ${size}px "Segoe UI", sans-serif`;
+         }
+         ctx.fillText(text, x, y);
+      };
+
+      const drawCoverImage = (
+         image: HTMLImageElement,
+         x: number,
+         y: number,
+         w: number,
+         h: number
+      ) => {
+         const scale = Math.max(w / image.width, h / image.height);
+         const sw = w / scale;
+         const sh = h / scale;
+         const sx = (image.width - sw) / 2;
+         const sy = (image.height - sh) / 2;
+         ctx.drawImage(image, sx, sy, sw, sh, x, y, w, h);
+      };
+
+      const photoFrame = {
+         x: width * 0.065,
+         y: frontHeight * 0.42,
+         w: width * 0.15,
+         h: frontHeight * 0.34,
+      };
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 6;
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(270, 140, 590, 290);
-      ctx.strokeStyle = '#1F3B7A';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(270, 140, 590, 290);
+      drawRoundedRect(
+         photoFrame.x,
+         photoFrame.y,
+         photoFrame.w,
+         photoFrame.h,
+         16
+      );
+      ctx.fill();
+      ctx.restore();
 
-      ctx.fillStyle = '#0B2B6D';
-      ctx.font = 'bold 18px "Segoe UI", sans-serif';
-      ctx.fillText('Member Information', 300, 175);
+      ctx.save();
+      drawRoundedRect(
+         photoFrame.x + 6,
+         photoFrame.y + 6,
+         photoFrame.w - 12,
+         photoFrame.h - 12,
+         12
+      );
+      ctx.clip();
+      if (photo) {
+         drawCoverImage(
+            photo,
+            photoFrame.x + 6,
+            photoFrame.y + 6,
+            photoFrame.w - 12,
+            photoFrame.h - 12
+         );
+      } else {
+         ctx.fillStyle = '#E5E7EB';
+         ctx.fillRect(
+            photoFrame.x + 6,
+            photoFrame.y + 6,
+            photoFrame.w - 12,
+            photoFrame.h - 12
+         );
+         ctx.fillStyle = '#111827';
+         ctx.font = '600 16px "Segoe UI", sans-serif';
+         ctx.fillText(
+            'Photo',
+            photoFrame.x + photoFrame.w * 0.32,
+            photoFrame.y + photoFrame.h * 0.55
+         );
+      }
+      ctx.restore();
 
-      ctx.fillStyle = '#1F3B7A';
-      ctx.font = 'bold 15px "Segoe UI", sans-serif';
-      ctx.fillText('Member ID', 300, 215);
-      ctx.fillText('Full Name', 300, 255);
-      ctx.fillText('Phone', 300, 295);
-      ctx.fillText('Email', 300, 335);
-      ctx.fillText('Address', 300, 375);
+      ctx.fillStyle = '#1F2937';
+      drawFittedText(
+         nameText,
+         width * 0.34,
+         frontHeight * 0.55,
+         width * 0.52,
+         700,
+         Math.round(width * 0.03)
+      );
 
       ctx.fillStyle = '#111827';
-      ctx.font = '15px "Segoe UI", sans-serif';
-      ctx.fillText(row.memberId ?? row.id ?? '—', 440, 215);
-      ctx.fillText(row.ownerName ?? '—', 440, 255);
-      ctx.fillText(row.phone ?? '—', 440, 295);
-      ctx.fillText(row.email ?? '—', 440, 335);
-      ctx.fillText(row.address ?? '—', 440, 375);
-
-      if (qr) {
-         ctx.fillStyle = '#FFFFFF';
-         ctx.fillRect(640, 200, 200, 200);
-         ctx.strokeStyle = '#1F3B7A';
-         ctx.strokeRect(640, 200, 200, 200);
-         ctx.drawImage(qr, 650, 210, 180, 180);
-         ctx.fillStyle = '#1F3B7A';
-         ctx.font = '12px "Segoe UI", sans-serif';
-         ctx.fillText('Scan for verification', 665, 415);
-      }
-
-      ctx.fillStyle = '#0B2B6D';
-      ctx.fillRect(0, 460, width, 100);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '14px "Segoe UI", sans-serif';
-      ctx.fillText(
-         'Authorized by: Bangladesh Petroleum Dealers Association',
-         40,
-         500
+      drawFittedText(
+         memberIdText,
+         width * 0.415,
+         frontHeight * 0.64,
+         width * 0.28,
+         600,
+         Math.round(width * 0.026)
       );
-      ctx.fillText(
-         'This card is non-transferable and remains property of the association.',
-         40,
-         525
-      );
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.moveTo(640, 520);
-      ctx.lineTo(840, 520);
-      ctx.stroke();
-      ctx.fillText('Authorized Signature', 660, 545);
 
       const link = document.createElement('a');
       link.download = `owner-card-${row.memberId ?? row.id}.png`;
