@@ -244,7 +244,6 @@ export default function VerifiedOwnersTable() {
                setActive(null);
             }}
          />
-
       </div>
    );
 }
