@@ -123,7 +123,7 @@ export default function MembershipFormPopup({
             </p>
 
             <div className="mt-7 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6 md:mt-8">
-              <button
+              {/* <button
                 type="button"
                 onClick={onOnlineApply}
                 className={cx(
@@ -137,7 +137,7 @@ export default function MembershipFormPopup({
               >
                 <PenLine className="h-4 w-4" />
                 অনলাইন আবেদন করুন
-              </button>
+              </button> */}
 
               <button
                 type="button"

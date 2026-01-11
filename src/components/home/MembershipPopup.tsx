@@ -5,7 +5,7 @@ import MembershipFormPopup from '@/components/MembershipFormPopup';
 
 const STORAGE_KEY = 'membership_popup_closed_at';
 const SHOW_AFTER_MS = 1600;
-const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
+const COOLDOWN_MS = 3 * 1000;
 
 export default function MembershipPopup() {
    const [open, setOpen] = useState(false);
@@ -46,10 +46,11 @@ export default function MembershipPopup() {
       <MembershipFormPopup
          open={open}
          onClose={close}
-         onOnlineApply={() => {
-            close();
-            window.location.href = '/membership-form';
-         }}
+         // onOnlineApply={() => {
+
+         //    close();
+         //    window.location.href = '/membership-form';
+         // }}
          onDownload={() => {
             close();
             window.open('/files/membership-form.pdf', '_blank');

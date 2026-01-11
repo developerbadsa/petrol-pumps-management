@@ -9,16 +9,24 @@ import leaderImg2 from '@/assets/leader-img/MirAhasanUddinFarvez.jpeg';
 import folio1 from '@/assets/Bento_Grid (7).png';
 import folio2 from '@/assets/Bento_Grid (8).png';
 import sponserImg1 from '@/assets/sponser-img/mgi.png';
-import laugfs from '@/assets/sponser-img/laugfs.png';
-import promita from '@/assets/sponser-img/promita.png';
-import total from '@/assets/sponser-img/total.png';
-import omera from '@/assets/sponser-img/omera.png';
-import jsjvl from '@/assets/sponser-img/jsjvl.png';
-import navama from '@/assets/sponser-img/navana.png';
-import ggas from '@/assets/sponser-img/ggas.png';
-import beximco from '@/assets/sponser-img/beximco.png';
-import prtromax from '@/assets/sponser-img/prtromax.png';
-import universal from '@/assets/sponser-img/universal.png';
+
+// import laugfs from '@/assets/sponser-img/laugfs.png';
+// import promita from '@/assets/sponser-img/promita.png';
+// import total from '@/assets/sponser-img/total.png';
+// import omera from '@/assets/sponser-img/omera.png';
+// import jsjvl from '@/assets/sponser-img/jsjvl.png';
+// import navama from '@/assets/sponser-img/navana.png';
+// import ggas from '@/assets/sponser-img/ggas.png';
+// import beximco from '@/assets/sponser-img/beximco.png';
+// import prtromax from '@/assets/sponser-img/prtromax.png';
+// import universal from '@/assets/sponser-img/universal.png';
+
+
+import bpc from '@/assets/sponser-img/bpc.jpeg';
+import jamuna from '@/assets/sponser-img/jamuna.jpeg';
+import meghna from '@/assets/sponser-img/meghna.jpeg';
+import padna from '@/assets/sponser-img/padna.jpeg';
+
 
 import arrowuiIcon from '@/assets/ui-icons/Layer_1 (3).png';
 import SectionHeading from '@components/ui/SectionHeading';
@@ -39,18 +47,16 @@ type Leader = {
 };
 
 const sponsors: Sponsor[] = [
-   {name: 'MGI', logo: sponserImg1},
-   {name: 'Laugfs Gas', logo: laugfs},
-   {name: 'Promita LPG', logo: promita},
-   {name: 'Total', logo: total},
-   {name: 'Omera', logo: omera},
-   {name: 'Jsjvl', logo: jsjvl},
+   {name: 'MGI', logo: bpc},
+   {name: 'jamuna', logo: jamuna},
+   {name: 'meghna', logo: meghna},
+   {name: 'padma', logo: padna}
 
-   {name: 'Navana LPG', logo: navama},
-   {name: 'G Gas', logo: ggas},
-   {name: 'Beximco LPG', logo: beximco},
-   {name: 'Petromax LPG', logo: prtromax},
-   {name: 'Universal Gas', logo: universal},
+   // {name: 'Navana LPG', logo: navama},
+   // {name: 'G Gas', logo: ggas},
+   // {name: 'Beximco LPG', logo: beximco},
+   // {name: 'Petromax LPG', logo: prtromax},
+   // {name: 'Universal Gas', logo: universal},
 ];
 
 const leaders: Leader[] = [
@@ -96,18 +102,8 @@ export default function SponsorsSection() {
    }[] = [
       {
          direction: 'right',
-         items: sponsors.slice(0, 2),
-         durationSec: 6,
-      },
-      {
-         direction: 'left',
-         items: sponsors.slice(2, 6),
-         durationSec: 10,
-      },
-      {
-         direction: 'right',
-         items: sponsors.slice(6, 11),
-         durationSec: 15,
+         items: sponsors.slice(0, 3),
+         durationSec: 8,
       },
    ];
 
