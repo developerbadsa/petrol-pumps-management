@@ -3,7 +3,7 @@
 import {useCallback, useMemo} from 'react';
 import {useRouter} from 'next/navigation';
 import {useQueryClient} from '@tanstack/react-query';
-import {Database, Eye, Pencil, FileText} from 'lucide-react';
+import {Database, Eye, Pencil, FileText, Trash2} from 'lucide-react';
 
 import TablePanel from '@/components/ui/table-panel/TablePanel';
 import type {ColumnDef} from '@/components/ui/table-panel/types';
@@ -11,7 +11,7 @@ import {exportRowsToCsv} from '@/components/ui/table-panel/exportCsv';
 import Loader from '@/components/shared/Loader';
 
 import type {VerifiedStationRow} from './types';
-import {useVerifiedStations} from './queries';
+import {useDeleteStation, useVerifiedStations} from './queries';
 import {getStationDetailsRepo} from './repo';
 
 function cx(...v: Array<string | false | null | undefined>) {
@@ -54,6 +54,7 @@ function IconDot({
 export default function VerifiedStationsTable() {
    const router = useRouter();
    const q = useVerifiedStations();
+   const delM = useDeleteStation();
    const qc = useQueryClient();
 
    const prefetchDetails = useCallback(
@@ -226,6 +227,21 @@ export default function VerifiedStationsTable() {
                   </IconDot>
 
                   <IconDot
+                     title='Delete station'
+                     onClick={() => {
+                        if (delM.isPending) return;
+                        const ok = window.confirm(
+                           'Delete this station? This cannot be undone.'
+                        );
+                        if (!ok) return;
+                        delM.mutate(r.id);
+                     }}
+                     disabled={delM.isPending}
+                     bg='bg-[#EF4444]'>
+                     <Trash2 size={12} className='text-white' />
+                  </IconDot>
+
+                  <IconDot
                      title='Edit station'
                      onMouseEnter={() => prefetchDetails(r.id)}
                      onClick={() => goEdit(r.id)}
@@ -236,7 +252,7 @@ export default function VerifiedStationsTable() {
             ),
          },
       ];
-   }, [goEdit, goView, prefetchDetails]);
+   }, [delM, goEdit, goView, prefetchDetails]);
 
    if (q.isLoading) return <Loader label='Loading...' />;
    if (q.isError)

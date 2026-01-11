@@ -32,9 +32,9 @@ const MAIN_NAV: NavItem[] = [
       label: 'GALLERY',
       href: '#',
       children: [
-         // { label: 'PHOTO', href: '/gallery/photo' },
-         {label: 'Photo', href: '/gallery/print-media-gallery'},
-         // {label: 'MEDIA COVERAGE', href: '/gallery/media-coverage'},
+         {label: 'PHOTO GALLERY', href: '/gallery/photo-gallery'},
+         {label: 'PRINT MEDIA GALLERY', href: '/gallery/print-media-gallery'},
+         {label: 'MEDIA COVERAGE', href: '/gallery/media-coverage'},
          {label: 'VIDEO GALLERY', href: '/gallery/video-gallery'},
       ],
    },
@@ -192,7 +192,7 @@ export default function Header({heroSize = ''}: {heroSize?: string}) {
             />
          )}
 
-         <header className='relative z-20 flex justify-center py-6 pt-[70px] md:py-10 md:pt-[80px] px-2 lg:px-0'>
+         <header className='sticky top-0 z-40 flex justify-center py-6 pt-[70px] md:py-10 md:pt-[80px] px-2 lg:px-0'>
             {/* IMPORTANT: overflow-visible so dropdown isn't clipped */}
             <div className='relative flex h-[70px] w-full items-center justify-between rounded-full bg-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur lpg-container overflow-visible md:h-[85px]'>
                <Link

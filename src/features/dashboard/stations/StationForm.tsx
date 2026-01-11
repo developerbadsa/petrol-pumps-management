@@ -28,6 +28,7 @@ type FormState = {
   station_owner_id: string;
   station_name: string;
   fuel_type: string;
+  oil_company_name: string;
   station_type: string;
   station_status: string;
   business_type: string;
@@ -64,8 +65,9 @@ const emptyForm: FormState = {
   station_owner_id: '',
   station_name: '',
   fuel_type: '',
+  oil_company_name: '',
   station_type: '',
-  station_status: 'PENDING',
+  station_status: 'Running',
   business_type: '',
   dealership_agreement: '',
   division_id: '',
@@ -87,7 +89,7 @@ const emptyForm: FormState = {
 
 const createDefaults: Pick<FormState, 'station_status' | 'verification_status'> =
   {
-    station_status: 'PENDING',
+    station_status: 'Running',
     verification_status: 'PENDING',
   };
 
@@ -194,6 +196,7 @@ function mapStationDetailsToForm(data: any): FormState {
     station_owner_id: ownerId,
     station_name: str(pick(data?.station_name, data?.stationName, data?.name)),
     fuel_type: str(data?.fuel_type),
+    oil_company_name: str(data?.oil_company_name),
     station_type: str(data?.station_type),
     station_status: str(data?.station_status),
     business_type: str(data?.business_type),
@@ -376,6 +379,73 @@ export default function StationForm({
     []
   );
 
+  const fuelOptions = useMemo(
+    () => [
+      {id: 'Petrol', label: 'Petrol'},
+      {id: 'Diesel', label: 'Diesel'},
+      {id: 'Octane', label: 'Octane'},
+      {id: 'Kerosene', label: 'Kerosene'},
+      {id: 'Mobil', label: 'Mobil'},
+    ],
+    []
+  );
+
+  const oilCompanyOptions = useMemo(
+    () => [
+      {id: 'Bangladesh Petroleum Corporation (BPC)', label: 'Bangladesh Petroleum Corporation (BPC)'},
+      {id: 'Padma Oil Company Ltd.', label: 'Padma Oil Company Ltd.'},
+      {id: 'Jamuna Oil Company Ltd.', label: 'Jamuna Oil Company Ltd.'},
+      {id: 'Meghna Petroleum Ltd.', label: 'Meghna Petroleum Ltd.'},
+    ],
+    []
+  );
+
+  const stationTypeOptions = useMemo(
+    () => [
+      {id: 'Filling Station', label: 'Filling Station'},
+      {id: 'Petrol Pump', label: 'Petrol Pump'},
+      {id: 'Depot/Storage Station', label: 'Depot/Storage Station'},
+      {id: 'Kerosene Distribution Center', label: 'Kerosene Distribution Center'},
+      {id: 'Mobil Station', label: 'Mobil Station'},
+    ],
+    []
+  );
+
+  const stationStatusOptions = useMemo(
+    () => [
+      {id: 'Running', label: 'Running'},
+      {id: 'On Going', label: 'On Going'},
+      {id: 'Up Coming', label: 'Up Coming'},
+    ],
+    []
+  );
+
+  const businessTypeOptions = useMemo(
+    () => [
+      {id: 'Dealer', label: 'Dealer'},
+      {id: 'Agent', label: 'Agent'},
+      {id: 'Distribution', label: 'Distribution'},
+    ],
+    []
+  );
+
+  const otherBusinessFallback = useMemo(
+    () => [
+      {id: 'Filling Station', name: 'Filling Station'},
+      {id: 'Petrol Pump', name: 'Petrol Pump'},
+      {id: 'Depot/Storage Station', name: 'Depot/Storage Station'},
+      {id: 'Kerosene Distribution Center', name: 'Kerosene Distribution Center'},
+      {id: 'Mobil Station', name: 'Mobil Station'},
+    ],
+    []
+  );
+
+  const otherBusinessOptions = useMemo(() => {
+    const rows = otherBusinessesQ.data ?? [];
+    if (!rows.length) return otherBusinessFallback;
+    return rows.map(b => ({id: b.id, name: b.name}));
+  }, [otherBusinessesQ.data, otherBusinessFallback]);
+
   const filteredDistricts = useMemo(() => {
     const rows = districtsQ.data ?? [];
     if (!form.division_id) return rows;
@@ -466,6 +536,10 @@ export default function StationForm({
 
   const canSubmit = !isView && requiredFilled && !saving;
 
+  const [existingStationId, setExistingStationId] = useState('');
+  const [existingStationError, setExistingStationError] = useState<string | null>(null);
+  const [loadingExisting, setLoadingExisting] = useState(false);
+
   const handleSubmit = () => {
     setValidationError(null);
 
@@ -511,16 +585,12 @@ export default function StationForm({
       return;
     }
 
-    if (mode !== 'create' && form.station_status && !isValidOptionId(statusOptions, form.station_status)) {
+    if (form.station_status && !isValidOptionId(stationStatusOptions, form.station_status)) {
       setValidationError('Please select a valid station status.');
       return;
     }
 
-    if (
-      mode !== 'create' &&
-      form.verification_status &&
-      !isValidOptionId(statusOptions, form.verification_status)
-    ) {
+    if (form.verification_status && !isValidOptionId(statusOptions, form.verification_status)) {
       setValidationError('Please select a valid verification status.');
       return;
     }
@@ -530,7 +600,7 @@ export default function StationForm({
       return;
     }
 
-    const otherBusinessIds = (otherBusinessesQ.data ?? []).map(b => toId(b.id));
+    const otherBusinessIds = otherBusinessOptions.map(b => String(b.id));
     if (form.other_businesses.some(id => !otherBusinessIds.includes(String(id)))) {
       setValidationError('Please select valid other businesses from the list.');
       return;
@@ -558,6 +628,7 @@ export default function StationForm({
       station_owner_id: toNumberOrUndefined(form.station_owner_id) ?? form.station_owner_id,
       station_name: form.station_name,
       fuel_type: form.fuel_type || null,
+      oil_company_name: form.oil_company_name || null,
       station_type: form.station_type || null,
       station_status: statusDefaults.station_status ?? (form.station_status || null),
       business_type: form.business_type || null,
@@ -603,13 +674,50 @@ export default function StationForm({
         <div className='text-sm text-red-600'>Failed to load station details.</div>
       ) : (
         <div className='space-y-4'>
-          <div className='grid gap-4 md:grid-cols-2'>
-            {mode === 'create' ? (
-              <div className='md:col-span-2 rounded-[8px] border border-dashed border-black/10 bg-[#F6F9FF] px-4 py-3 text-[12px] text-[#2B3A4A]'>
-                <span className='font-semibold text-[#173A7A]'>Status:</span>{' '}
-                Pending
+          {mode === 'create' ? (
+            <div className='rounded-[8px] border border-dashed border-black/10 bg-[#F6F9FF] px-4 py-3 text-[12px] text-[#2B3A4A]'>
+              <div className='mb-2 text-[12px] font-semibold text-[#173A7A]'>
+                Add Existing Gas Station
               </div>
-            ) : null}
+              <div className='flex flex-col gap-2 md:flex-row md:items-center'>
+                <input
+                  value={existingStationId}
+                  onChange={e => setExistingStationId(e.target.value)}
+                  placeholder='Enter station ID'
+                  disabled={loadingExisting || isView}
+                  className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+                />
+                <button
+                  type='button'
+                  disabled={loadingExisting || !existingStationId.trim()}
+                  onClick={async () => {
+                    if (!existingStationId.trim()) return;
+                    setExistingStationError(null);
+                    setLoadingExisting(true);
+                    try {
+                      const data = await getStationDetailsRepo(existingStationId.trim());
+                      setForm({...mapStationDetailsToForm(data), ...createDefaults});
+                    } catch (err: any) {
+                      setExistingStationError(
+                        err?.message ?? 'Unable to load the existing station.'
+                      );
+                    } finally {
+                      setLoadingExisting(false);
+                    }
+                  }}
+                  className='h-9 rounded-[6px] bg-[#133374] px-4 text-[12px] font-semibold text-white shadow-sm disabled:opacity-60'>
+                  {loadingExisting ? 'Loading...' : 'Load'}
+                </button>
+              </div>
+              {existingStationError ? (
+                <p className='mt-2 text-[11px] font-medium text-red-600'>
+                  {existingStationError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className='grid gap-4 md:grid-cols-2'>
 
             <div>
               <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
@@ -659,16 +767,37 @@ export default function StationForm({
               <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                 Fuel Type
               </label>
-              <input
+              <DatalistInput
                 value={form.fuel_type}
-                onChange={e =>
+                options={fuelOptions}
+                onValueChange={value =>
                   setForm(prev => ({
                     ...prev,
-                    fuel_type: e.target.value,
+                    fuel_type: value,
                   }))
                 }
                 disabled={isView}
-                className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+                placeholder='Select fuel type'
+                listId='fuel-type-options'
+              />
+            </div>
+
+            <div>
+              <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
+                Oil Company Name
+              </label>
+              <DatalistInput
+                value={form.oil_company_name}
+                options={oilCompanyOptions}
+                onValueChange={value =>
+                  setForm(prev => ({
+                    ...prev,
+                    oil_company_name: value,
+                  }))
+                }
+                disabled={isView}
+                placeholder='Select oil company'
+                listId='oil-company-options'
               />
             </div>
 
@@ -676,54 +805,56 @@ export default function StationForm({
               <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                 Station Type
               </label>
-              <input
+              <DatalistInput
                 value={form.station_type}
-                onChange={e =>
+                options={stationTypeOptions}
+                onValueChange={value =>
                   setForm(prev => ({
                     ...prev,
-                    station_type: e.target.value,
+                    station_type: value,
                   }))
                 }
                 disabled={isView}
-                className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+                placeholder='Select station type'
+                listId='station-type-options'
               />
             </div>
 
-            {mode !== 'create' ? (
-              <div>
-                <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
-                  Station Status
-                </label>
-                <DatalistInput
-                  value={form.station_status}
-                  options={statusOptions}
-                  onValueChange={value =>
-                    setForm(prev => ({
-                      ...prev,
-                      station_status: value,
-                    }))
-                  }
-                  disabled={isView}
-                  placeholder='Select status'
-                  listId='station-status-options'
-                />
-              </div>
-            ) : null}
+            <div>
+              <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
+                Station Status
+              </label>
+              <DatalistInput
+                value={form.station_status}
+                options={stationStatusOptions}
+                onValueChange={value =>
+                  setForm(prev => ({
+                    ...prev,
+                    station_status: value,
+                  }))
+                }
+                disabled={isView}
+                placeholder='Select status'
+                listId='station-status-options'
+              />
+            </div>
 
             <div>
               <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                 Business Type
               </label>
-              <input
+              <DatalistInput
                 value={form.business_type}
-                onChange={e =>
+                options={businessTypeOptions}
+                onValueChange={value =>
                   setForm(prev => ({
                     ...prev,
-                    business_type: e.target.value,
+                    business_type: value,
                   }))
                 }
                 disabled={isView}
-                className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+                placeholder='Select business type'
+                listId='business-type-options'
               />
             </div>
 
@@ -731,16 +862,18 @@ export default function StationForm({
               <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                 Dealership Agreement
               </label>
-              <input
+              <DatalistInput
                 value={form.dealership_agreement}
-                onChange={e =>
+                options={oilCompanyOptions}
+                onValueChange={value =>
                   setForm(prev => ({
                     ...prev,
-                    dealership_agreement: e.target.value,
+                    dealership_agreement: value,
                   }))
                 }
                 disabled={isView}
-                className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
+                placeholder='Select agreement'
+                listId='dealership-agreement-options'
               />
             </div>
 
@@ -898,7 +1031,7 @@ export default function StationForm({
                 Other Businesses
               </label>
               <div className='flex flex-wrap gap-3'>
-                {(otherBusinessesQ.data ?? []).map(b => {
+                {otherBusinessOptions.map(b => {
                   const checked = form.other_businesses.includes(b.id);
                   return (
                     <label
@@ -1139,4 +1272,3 @@ export default function StationForm({
     </div>
   );
 }
-

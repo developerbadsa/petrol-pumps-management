@@ -13,6 +13,7 @@ type Props = {
    initialValues?: StationFormDefaults;
    returnTo?: string;
    title: string;
+   subtitle?: string;
 };
 
 export default function StationUpsertSection({
@@ -21,6 +22,7 @@ export default function StationUpsertSection({
    initialValues,
    returnTo,
    title,
+   subtitle,
 }: Props) {
    const router = useRouter();
    const createM = useCreateStation();
@@ -36,6 +38,11 @@ export default function StationUpsertSection({
          <h2 className='text-center text-[18px] font-semibold text-[#133374]'>
             {title}
          </h2>
+         {subtitle ? (
+            <p className='text-center text-[12px] font-medium text-[#6F8093]'>
+               {subtitle}
+            </p>
+         ) : null}
 
          <div className='rounded-[12px] border border-black/10 bg-white p-5 shadow-sm'>
             <StationForm

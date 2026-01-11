@@ -54,8 +54,12 @@ export default function RegisterOwnerSection() {
    return (
       <section className='space-y-6'>
          <h2 className='text-center text-[16px] font-semibold text-[#2B3A4A]'>
-            Register a New Station Owner
+            Bangladesh petroleum dealer&apos;s Distributor&apos;s Agent&apos;s &amp; Petrol
+            Pump Owner&apos;s Association
          </h2>
+         <p className='text-center text-[12px] font-medium text-[#6F8093]'>
+            Register a New Station Owner
+         </p>
 
          {toast ? (
             <div className='fixed right-6 top-6 z-50 rounded-[10px] border border-black/5 bg-white px-4 py-3 text-[12px] shadow-[0_10px_30px_rgba(0,0,0,0.12)]'>

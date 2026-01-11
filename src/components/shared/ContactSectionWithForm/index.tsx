@@ -12,32 +12,56 @@ import ContactFormPanel from './ContactFormPanel';
 
 const CONTACT_ITEMS: ContactItem[] = [
    {
-      id: 'person',
+      id: 'org-name-en',
       type: 'person',
-      label: 'CONTACT PERSON:',
-      value: 'Mir Ahasan Uddin Parvez',
+      label: 'ORGANIZATION NAME:',
+      value:
+         "Bangladesh Petroleum Dealer’s, Distributor’s Agent’s & Petrol Pump Owner’s Association",
       img: personIcon,
+   },
+   {
+      id: 'org-name-bn',
+      type: 'person',
+      label: 'প্রতিষ্ঠানের নাম:',
+      value:
+         'বাংলাদেশ পেট্রোলিয়াম ডিলার্স,ডিস্ট্রিবিউটার্স,এজেন্ট এন্ড পেট্রোল পাম্প ওনার্স এসোসিয়েশন',
+      img: personIcon,
+   },
+   {
+      id: 'established',
+      type: 'person',
+      label: 'ESTABLISHED:',
+      value: '2000',
+      img: personIcon,
+   },
+   {
+      id: 'address-primary',
+      type: 'location',
+      label: 'ADDRESS:',
+      value:
+         'Gulfesha Plaza, Left-10, Suite No-10/O, 69 Outer Circular Rd, MoghBazar Mor, Dhaka 1217',
+      img: locationIcon,
+   },
+   {
+      id: 'address-secondary',
+      type: 'location',
+      label: 'ADDRESS:',
+      value: 'Gulfesha Plaza, 69 Outer Circular Rd, MoghBazar Mor, Dhaka 1217.',
+      img: locationIcon,
+   },
+   {
+      id: 'phone',
+      type: 'phone',
+      label: 'PHONE:',
+      value: '+8801730-178288, +8801615-851373, +8801711-534142',
+      img: callIcon,
    },
    {
       id: 'email',
       type: 'email',
       label: 'EMAIL:',
-      value: 'BDLPGAUTOGAS19@GMAIL.COM',
+      value: 'info@petroleumstationbd.com',
       img: emailIcon,
-   },
-   {
-      id: 'phone',
-      type: 'phone',
-      label: 'CALL:',
-      value: ' +8801730178288, +8801715851373',
-      img: callIcon,
-   },
-   {
-      id: 'location',
-      type: 'location',
-      label: 'LOCATION:',
-      value: 'HOUSE - 2, ROAD - 2, PALLABI, MIRPUR, DHAKA-1216',
-      img: locationIcon,
    },
 ];
 

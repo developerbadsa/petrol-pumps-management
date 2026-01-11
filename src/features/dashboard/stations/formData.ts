@@ -2,6 +2,7 @@ export type StationUpsertPayload = {
   station_owner_id?: number | string | null;
   station_name?: string | null;
   fuel_type?: string | null;
+  oil_company_name?: string | null;
   station_type?: string | null;
   station_status?: string | null;
   business_type?: string | null;
@@ -35,6 +36,7 @@ export function buildStationFormData(payload: StationUpsertPayload) {
   appendIfPresent(form, 'station_owner_id', payload.station_owner_id);
   appendIfPresent(form, 'station_name', payload.station_name);
   appendIfPresent(form, 'fuel_type', payload.fuel_type);
+  appendIfPresent(form, 'oil_company_name', payload.oil_company_name);
   appendIfPresent(form, 'station_type', payload.station_type);
   appendIfPresent(form, 'station_status', payload.station_status);
   appendIfPresent(form, 'business_type', payload.business_type);
