@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import TablePanel from '@/components/ui/table-panel/TablePanel';
 import type { ColumnDef } from '@/components/ui/table-panel/types';
 import Loader from '@/components/shared/Loader';
@@ -26,6 +27,9 @@ export default function StationDocumentsTable() {
   const del = useDeleteStationDocument();
   const createM = useCreateStationDocument();
   const updateM = useUpdateStationDocument();
+  const searchParams = useSearchParams();
+  const stationIdParam = searchParams.get('stationId');
+  const stationIdFilter = stationIdParam ? Number(stationIdParam) : null;
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -135,6 +139,12 @@ export default function StationDocumentsTable() {
   if (q.isLoading) return <Loader label="Loading..." />;
   if (q.isError) return <div className="text-sm text-red-600">Failed to load documents.</div>;
 
+  const rows = q.data ?? [];
+  const filteredRows =
+    stationIdFilter && Number.isFinite(stationIdFilter)
+      ? rows.filter((row) => row.stationId === stationIdFilter)
+      : rows;
+
   return (
     <div className="space-y-4">
       <h2 className="text-center text-[16px] font-semibold text-[#2B3A4A]">
@@ -142,7 +152,7 @@ export default function StationDocumentsTable() {
       </h2>
 
       <TablePanel<StationDocumentRow>
-        rows={q.data ?? []}
+        rows={filteredRows}
         columns={columns}
         getRowKey={(r) => r.id}
         searchText={(r) => `${r.sl} ${r.stationId ?? ''} ${r.documentType}`}

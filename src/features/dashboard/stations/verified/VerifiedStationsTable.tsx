@@ -187,23 +187,25 @@ export default function VerifiedStationsTable() {
             align: 'center',
             headerClassName: 'w-[95px]',
             csvHeader: 'Doc',
-            csvValue: r => (r.docUrl ? 'Yes' : 'No'),
-            cell: r => (
-               <button
-                  type='button'
-                  title='Open document'
-                  aria-label='Open document'
-                  onClick={() => {
-                     if (!r.docUrl) return;
-                     window.open(r.docUrl, '_blank', 'noopener,noreferrer');
-                  }}
-                  className={cx(
-                     'inline-flex items-center justify-center',
-                     !r.docUrl && 'opacity-40'
-                  )}>
-                  <FileText size={18} color='#5B7FFF' />
-               </button>
-            ),
+            csvValue: () => 'View',
+            cell: r => {
+               const docHref = `/settings/station-documents?stationId=${encodeURIComponent(
+                  r.id
+               )}`;
+
+               return (
+                  <button
+                     type='button'
+                     title='Open station documents'
+                     aria-label='Open station documents'
+                     onClick={() => {
+                        window.open(docHref, '_blank', 'noopener,noreferrer');
+                     }}
+                     className={cx('inline-flex items-center justify-center')}>
+                     <FileText size={18} color='#5B7FFF' />
+                  </button>
+               );
+            },
          },
          {
             id: 'action',
