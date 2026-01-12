@@ -147,12 +147,12 @@ export default function UnverifiedOwnersTable() {
         ),
       },
       {
-        id: 'upazila',
-        header: 'Upazila',
+        id: 'Action',
+        header: 'Action',
         sortable: false,
         align: 'center',
         headerClassName: 'w-[170px]',
-        csvHeader: 'Upazila',
+        csvHeader: 'Options',
         csvValue: () => '',
         cell: (r) => (
           <div className="flex items-center justify-center gap-2">
