@@ -46,6 +46,7 @@ type FormState = {
    contact_person_name: string;
    contact_person_phone: string;
    other_businesses: string[];
+   verification_status: string;
    verified_by: string;
    verified_at: string;
    rejection_reason: string;
@@ -82,6 +83,7 @@ const emptyForm: FormState = {
    contact_person_name: '',
    contact_person_phone: '',
    other_businesses: [],
+   verification_status: 'PENDING',
    verified_by: '',
    verified_at: '',
    rejection_reason: '',
@@ -498,7 +500,7 @@ export default function StationForm({
    const otherBusinessOptions = useMemo(() => {
       const rows = otherBusinessesQ.data ?? [];
       if (!rows.length) return otherBusinessFallback;
-      return rows.map(b => ({id: b.id, name: b.name}));
+      return rows.map(b => ({id: String(b.id), name: b.name}));
    }, [otherBusinessesQ.data, otherBusinessFallback]);
 
    const filteredDistricts = useMemo(() => {
@@ -958,6 +960,7 @@ export default function StationForm({
                         Station Status
                      </label>
                      <DatalistInput
+                        value={form.station_status}
                         options={stationStatusOptions}
                         onValueChange={value =>
                            setForm(prev => ({
@@ -1159,7 +1162,7 @@ export default function StationForm({
                      </label>
                      <input
                         value={form.contact_person_phone}
-                        type='number'
+                        type='tel'
                         onChange={e =>
                            setForm(prev => ({
                               ...prev,
