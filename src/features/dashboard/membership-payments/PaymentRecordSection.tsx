@@ -274,7 +274,7 @@ export default function PaymentRecordSection() {
               />
             </div>
 
-            <div className="border border-black/10  rounded-[6px] ">
+            <div className="border border-black/10  rounded-[6px] p-2">
               <label className="mb-1 block text-[11px] font-semibold text-[#173A7A]">
                 Choose Documents
               </label>
