@@ -1,8 +1,63 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Modal from '@/components/ui/modal/Modal';
 import type { StationDocumentInput, StationDocumentRow } from './types';
+
+type StationOption = {
+  id: string;
+  label: string;
+};
+
+function str(value: any, fallback = '') {
+  const s = String(value ?? '').trim();
+  return s || fallback;
+}
+
+function pick<T>(...values: Array<T | null | undefined>) {
+  for (const value of values) {
+    if (value != null && value !== ('' as any)) return value;
+  }
+  return undefined;
+}
+
+function toId(value: any) {
+  const v = String(value ?? '').trim();
+  return v || '';
+}
+
+function normalizeList(raw: any): any[] {
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.data)) return raw.data;
+  if (Array.isArray(raw?.data?.data)) return raw.data.data;
+  return [];
+}
+
+async function listStationOptions(): Promise<StationOption[]> {
+  const res = await fetch('/api/stations/unverified', {
+    method: 'GET',
+    cache: 'no-store',
+    headers: { Accept: 'application/json' },
+  });
+
+  const raw = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(raw?.message ?? 'Failed to load stations');
+
+  const rows = normalizeList(raw);
+
+  return rows
+    .map((row: any) => {
+      const id = toId(row?.id);
+      if (!id) return null;
+      const name = str(
+        pick(row?.station_name, row?.stationName, row?.name),
+        `Station #${id}`,
+      );
+      return { id, label: `${name} (ID: ${id})` };
+    })
+    .filter(Boolean) as StationOption[];
+}
 
 type Props = {
   open: boolean;
@@ -24,17 +79,28 @@ export default function StationDocumentFormModal({
   onSubmit,
 }: Props) {
   const [stationId, setStationId] = useState(initial?.stationId?.toString() ?? '');
+  const [stationSearch, setStationSearch] = useState('');
   const [documentType, setDocumentType] = useState(initial?.documentType ?? '');
   const [file, setFile] = useState<File | null>(null);
 
   const title = mode === 'create' ? 'Add Station Document' : 'Edit Station Document';
 
+  const stationsQ = useQuery({
+    queryKey: ['stations', 'unverified', 'options'],
+    queryFn: listStationOptions,
+    enabled: open,
+  });
+
   useEffect(() => {
     if (!open) return;
     setStationId(initial?.stationId?.toString() ?? '');
+    setStationSearch('');
     setDocumentType(initial?.documentType ?? '');
     setFile(null);
   }, [open, initial]);
+
+  const stationOptions = stationsQ.data ?? [];
+  const loadingStations = stationsQ.isLoading;
 
   return (
     <Modal open={open} title={title} onClose={onClose} maxWidthClassName="max-w-[520px]">
@@ -53,6 +119,32 @@ export default function StationDocumentFormModal({
           });
         }}
       >
+        <div className="space-y-2">
+          <label className="text-[12px] font-semibold text-[#2B3A4A]">
+            Station Name
+          </label>
+          <input
+            list="station-options"
+            value={stationSearch}
+            onChange={(e) => {
+              const value = e.target.value;
+              setStationSearch(value);
+              const match = stationOptions.find(
+                (option) => option.label === value || option.id === value,
+              );
+              setStationId(match ? match.id : value);
+            }}
+            className="h-9 w-full rounded-[6px] border border-[#E5E7EB] px-3 text-[12px]"
+            placeholder={loadingStations ? 'Loading stations...' : 'Select station name'}
+            disabled={stationsQ.isError}
+          />
+          <datalist id="station-options">
+            {stationOptions.map((option) => (
+              <option key={option.id} value={option.label} />
+            ))}
+          </datalist>
+        </div>
+
         <div className="space-y-2">
           <label className="text-[12px] font-semibold text-[#2B3A4A]">
             Gas Station ID
