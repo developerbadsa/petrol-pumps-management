@@ -19,6 +19,11 @@ type StationOwnerOption = {
    label: string;
 };
 
+type ExistingStationOption = {
+   id: string;
+   label: string;
+};
+
 type DatalistOption = {
    id: string;
    label: string;
@@ -146,6 +151,29 @@ async function listStationOwners(): Promise<StationOwnerOption[]> {
       );
       const label = phone ? `${name} (${phone})` : name;
       return {id, label};
+   });
+}
+
+async function listExistingStations(): Promise<ExistingStationOption[]> {
+   const res = await fetch('/api/stations', {
+      method: 'GET',
+      cache: 'no-store',
+      headers: {Accept: 'application/json'},
+   });
+
+   const raw = await res.json().catch(() => null);
+   if (!res.ok)
+      throw new Error(raw?.message ?? 'Failed to load existing stations');
+
+   const rows = normalizeList<any>(raw);
+
+   return rows.map(row => {
+      const id = toId(row?.id);
+      const name = str(
+         pick(row?.station_name, row?.stationName, row?.name),
+         `Station #${id}`
+      );
+      return {id, label: name};
    });
 }
 
@@ -345,6 +373,12 @@ export default function StationForm({
       enabled,
    });
 
+   const existingStationsQ = useQuery({
+      queryKey: ['stations', 'existing'],
+      queryFn: listExistingStations,
+      enabled: enabled && mode === 'create',
+   });
+
    const divisionsQ = useQuery({
       queryKey: ['settings', 'divisions'],
       queryFn: () => divisionRepo.list(),
@@ -370,6 +404,7 @@ export default function StationForm({
    });
 
    const ownerOptions = ownersQ.data ?? [];
+   const existingStationOptions = existingStationsQ.data ?? [];
    const [stationOwnerSearch, setStationOwnerSearch] = useState('');
 
    const divisionOptions = useMemo(
@@ -551,7 +586,6 @@ export default function StationForm({
       isValidOptionId(districtOptions, form.district_id) &&
       isValidOptionId(upazilaOptions, form.upazila_id) &&
       !!form.station_address.trim() &&
-      !!toDateOrUndefined(form.commencement_date) &&
       phoneOk;
 
    const canSubmit = !isView && requiredFilled && !saving;
@@ -614,8 +648,8 @@ export default function StationForm({
          return;
       }
 
-      if (!toDateOrUndefined(form.commencement_date)) {
-         setValidationError('Commencement date is required.');
+      if (form.commencement_date && !toDateOrUndefined(form.commencement_date)) {
+         setValidationError('Commencement date is invalid.');
          return;
       }
 
@@ -745,12 +779,29 @@ export default function StationForm({
                      </div>
                      <div className='flex flex-col gap-2 md:flex-row md:items-center'>
                         <input
+                           list='existing-station-options'
                            value={existingStationId}
-                           onChange={e => setExistingStationId(e.target.value)}
-                           placeholder='Enter station ID'
-                           disabled={loadingExisting || isView}
+                           onChange={e => {
+                              const value = e.target.value;
+                              const match = existingStationOptions.find(
+                                 option =>
+                                    option.label === value || option.id === value
+                              );
+                              setExistingStationId(match ? match.id : value);
+                           }}
+                           placeholder='Select existing station'
+                           disabled={
+                              loadingExisting ||
+                              isView ||
+                              existingStationsQ.isError
+                           }
                            className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
                         />
+                        <datalist id='existing-station-options'>
+                           {existingStationOptions.map(option => (
+                              <option key={option.id} value={option.label} />
+                           ))}
+                        </datalist>
                         <button
                            type='button'
                            disabled={
@@ -939,18 +990,17 @@ export default function StationForm({
                      <label className='mb-1 block text-[11px] font-semibold text-[#173A7A]'>
                         Dealership Agreement
                      </label>
-                     <DatalistInput
+                     <input
                         value={form.dealership_agreement}
-                        options={oilCompanyOptions}
-                        onValueChange={value =>
+                        onChange={e =>
                            setForm(prev => ({
                               ...prev,
-                              dealership_agreement: value,
+                              dealership_agreement: e.target.value,
                            }))
                         }
                         disabled={isView}
-                        placeholder='Select agreement'
-                        listId='dealership-agreement-options'
+                        placeholder='Enter agreement'
+                        className='h-9 w-full rounded-[6px] border border-black/10 px-3 text-[12px] outline-none focus:border-black/20 disabled:bg-black/5'
                      />
                   </div>
 
