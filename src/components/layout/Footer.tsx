@@ -33,7 +33,7 @@ const services = [
 
 export default function Footer() {
    return (
-      <footer className='mt-20 relative pt-22 pb-12'>
+      <footer className='mt-4 relative pt-8 pb-3'>
          <div className=''>
             <Image
                src={footerbggridwrap}
@@ -48,7 +48,7 @@ export default function Footer() {
             <div className='flex flex-col gap-10 lg:flex-row lg:gap-12'>
                {/* left: logo + org info */}
                <div className='lg:w-[38%]'>
-                  <div className='flex items-start flex-col gap-4'>
+                  <div className='flex items-start flex-col gap-2'>
                      <div className='flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(0,0,0,0.35)]'>
                         <div className='relative h-14 w-14 overflow-hidden rounded-full'>
                            <Logo />
@@ -60,14 +60,14 @@ export default function Footer() {
                      </div>
                   </div>
 
-                  <p className='mt-4 text-[18px] leading-[22px] text-white/60'>
+                  <p className='mt-3 text-[18px] leading-[17px] text-white/60'>
                      We represent Bangladesh petroleum dealer's Distributor's
                      Agent's & Petrol Pump Owner's Association across
                      Bangladesh, working to ensure safety, compliance and
                      sustainable growth of the sector.
                   </p>
 
-                  <div className='mt-4 space-y-1 text-[12px] text-white/75'>
+                  <div className='mt-4 space-y-0 text-[12px] text-white/75'>
                      <div>
                         <span className='font-semibold'>Address:</span> 2/2
                         Pallabi, Dhaka, Bangladesh
@@ -156,7 +156,7 @@ export default function Footer() {
             <div className='mt-8 h-px w-full bg-white/25' />
 
             {/* bottom row: payment icons + copyright */}
-            <div className='mt-5 flex flex-col items-start gap-4'>
+            <div className='mt-5 flex flex-col items-start gap-2'>
                <div className='flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-[30px]'>
                   <span className='flex h-[44px] items-center text-nowrap border-r border-[#dddddd86] pr-6 text-white sm:border-r'>
                      Pay With

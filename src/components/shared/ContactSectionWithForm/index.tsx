@@ -15,16 +15,14 @@ const CONTACT_ITEMS: ContactItem[] = [
       id: 'org-name-en',
       type: 'person',
       label: 'ORGANIZATION NAME:',
-      value:
-         "Bangladesh Petroleum Dealer’s, Distributor’s Agent’s & Petrol Pump Owner’s Association",
+      value: 'Bangladesh Petroleum Dealer’s, Distributor’s Agent’s & Petrol Pump Owner’s Association',
       img: personIcon,
    },
    {
       id: 'address-primary',
       type: 'location',
       label: 'ADDRESS:',
-      value:
-         'Gulfesha Plaza, Left-10, Suite No-10/O, 69 Outer Circular Rd, MoghBazar Mor, Dhaka 1217',
+      value: 'Gulfesha Plaza, Left-10, Suite No-10/O, 69 Outer Circular Rd, MoghBazar Mor, Dhaka 1217',
       img: locationIcon,
    },
    {
@@ -44,7 +42,8 @@ const CONTACT_ITEMS: ContactItem[] = [
 ];
 
 const MAP_EMBED_URL =
-   'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d233668.0639611584!2d90.25488073778608!3d23.780753035026947!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8b087026b81%3A0x8fa563bbdd5904c2!2sDhaka!5e0!3m2!1sen!2sbd!4v1765343345730!5m2!1sen!2sbd';
+  'https://www.google.com/maps?q=23.7489983375624,90.40547490009656&z=18&output=embed';
+
 
 export default function ContactUsWithForm() {
    return (

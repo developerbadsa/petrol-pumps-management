@@ -127,10 +127,10 @@ export default function UnverifiedOwnersTable() {
       },
       {
         id: 'addSection',
-        header: 'VERIFY',
+        header: 'Add Station',
         sortable: false,
         align: 'center',
-        headerClassName: 'w-[160px]',
+        headerClassName: '',
         csvHeader: 'Verify',
         csvValue: () => '',
         cell: (r) => (
