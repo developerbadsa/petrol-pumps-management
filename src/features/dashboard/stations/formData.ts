@@ -22,6 +22,7 @@ export type StationUpsertPayload = {
   nid?: File | null;
   tin?: File | null;
   explosive_license?: File | null;
+  trade_license?: File | null;
 };
 
 function appendIfPresent(form: FormData, key: string, value: unknown) {
@@ -63,6 +64,7 @@ export function buildStationFormData(payload: StationUpsertPayload) {
   if (payload.nid) form.append('nid', payload.nid);
   if (payload.tin) form.append('tin', payload.tin);
   if (payload.explosive_license) form.append('explosive_license', payload.explosive_license);
+  if (payload.trade_license) form.append('trade_license', payload.trade_license);
 
   return form;
 }
