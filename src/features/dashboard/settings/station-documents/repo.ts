@@ -7,6 +7,7 @@ type StationDocumentApiRow = {
   gas_station_id?: number | string | null;
   document_type?: string | null;
   file_url?: string | null;
+  file_path?: string | null;
   url?: string | null;
   file?: string | null;
 };
@@ -32,7 +33,7 @@ function mapRow(row: StationDocumentApiRow, idx: number): StationDocumentRow | n
     (row.document_type ?? '').toString().trim() || `Document #${idNum}`;
 
   const origin = process.env.NEXT_PUBLIC_LARAVEL_ORIGIN ?? 'https://admin.petroleumstationbd.com';
-  const rel = (row.file_url ?? row.url ?? row.file ?? '').toString().trim();
+  const rel = (row.file_url ?? row.file_path ?? row.url ?? row.file ?? '').toString().trim();
   const fileUrl = rel ? toAbsoluteUrl(origin, rel) : null;
 
   return {
