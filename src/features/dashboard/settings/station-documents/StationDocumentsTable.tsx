@@ -81,11 +81,11 @@ export default function StationDocumentsTable() {
           r.fileUrl ? (
             <a
               href={r.fileUrl}
-              target="_blank"
-              rel="noreferrer"
+              download
+              aria-label={`Download ${r.documentType} document`}
               className="text-[12px] font-semibold text-[#133374] hover:underline"
             >
-              View
+              Download
             </a>
           ) : (
             <span className="text-[11px] text-[#94A3B8]">No file</span>
