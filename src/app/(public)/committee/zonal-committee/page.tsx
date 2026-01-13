@@ -8,7 +8,7 @@ export default function CommitteePage() {
     <div>
       <PageHero
         title="Committee"
-        subtitle="Lorem ipsum dolor sit amet consectetur. Neque aliquam amet commodo sollicitudin"
+        // subtitle="Lorem ipsum dolor sit amet consectetur. Neque aliquam amet commodo sollicitudin"
         backgroundImage={newsHero}
         height="compact"
       />

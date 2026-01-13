@@ -49,10 +49,10 @@ export default function PageHero({
          />
 
          {showHeader && <Header heroSize={heightClass[height]} />}
-         <div className="h-[90px]"></div>
+         <div className="h-[120px]"></div>
 
          {/* content */}
-         <div className='relative flex min-h-[70%] md:min-h-[500px] flex-col items-center justify-center px-4 pb-6 text-center text-white'>
+         <div className='relative flex min-h-[70%] md:min-h-[500px] flex-col items-center justify-center px-4 lpg-container pb-6 text-center text-white'>
             <h1 className='text-[24px] md:text-[38px] lg:text-[48px] font-bold leading-tight tracking-[-0.04em] mt-18 md:mt-0 mb-12'>
                {title}
             </h1>
@@ -64,7 +64,7 @@ export default function PageHero({
             )}
 
             {ctaLabel && ctaHref && (
-               <div className='mt-6'>
+               <div className='mt-16'>
                   <Link
                      href={ctaHref}
                      className='inline-flex items-center justify-center rounded-full btn-bg px-7 py-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white shadow-[0_8px_24px_rgba(0,166,81,0.55)]'>

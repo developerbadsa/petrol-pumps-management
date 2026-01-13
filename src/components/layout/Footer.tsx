@@ -17,11 +17,10 @@ const usefulLinks = [
 ];
 
 const services = [
-   'Owners Chain Management',
-   'LPG Autogas Station Management',
-   'LPG Conversion Workshop',
-   'Training & Certification',
-   'Regulatory Compliance Support',
+   'Regulatory Guidance',
+   'Largest Petrol Pump Owners Chain Management',
+   'Filling Station Management',
+   'Petrol/Diesel/Octane/Kerosene/ Lube Oil Business',
 ];
 
 // const paymentIcons = [
