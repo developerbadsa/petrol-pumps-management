@@ -28,7 +28,7 @@ export default function CommitteeMemberCard({
    return (
       <article
          className='
-        relative flex  flex-col items-center justify-between
+        group relative flex  flex-col items-center justify-between
         rounded-[20px]  w-full w-[360px]
         bg-gradient-to-b from-[#FBFEFF] via-[#F7FAFF] to-[#ECF3FF]
         px-7 pb-8 pt-12
@@ -53,7 +53,7 @@ export default function CommitteeMemberCard({
                      alt={member.name}
                      fill
                      sizes='152px'
-                     className='object-cover'
+                     className='object-cover transition-transform duration-300 group-hover:scale-110'
                   />
                </div>
             </div>
