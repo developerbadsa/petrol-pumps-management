@@ -69,8 +69,11 @@ export const DASH_NAV: NavItem[] = [
    {
       key: 'committee',
       label: 'Manage Committee',
-      href: '/manage-committee',
       icon: UsersRound,
+      children: [
+         {label: 'Central Committee', href: '/manage-committee'},
+         {label: 'Zonal Committee', href: '/manage-zonal-committee'},
+      ],
    },
 
    {
