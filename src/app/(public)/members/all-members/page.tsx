@@ -7,8 +7,8 @@ export default function MembersPage() {
   return (
     <div>
       <PageHero
-        title="Members"
-        subtitle="Lorem ipsum dolor sit amet consectetur. Neque aliquam amet commodo sollicitudin"
+        title="Member List"
+        subtitle="Welcome to the Members Page of the Bangladesh Petroleum Dealers’, Distributor’s Agents’ & Petrol Pump Owners’ Association."
         backgroundImage={heroImg}
         height="compact"
       />

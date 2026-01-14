@@ -8,8 +8,8 @@ export default function RunningStationsPage() {
   return (
     <div>
       <PageHero
-        title="Members"
-        subtitle="Lorem ipsum dolor sit amet consectetur. Neque aliquam amet commodo sollicitudin"
+        title="Running Stations List"
+        subtitle="Approved gas stations currently operating across Bangladesh."
         backgroundImage={heroBg}
         height="compact"
       />

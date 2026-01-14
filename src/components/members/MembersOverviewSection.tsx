@@ -185,10 +185,15 @@ export default function MembersOverviewSection() {
       <div className="lpg-container relative">
         <div className="mx-auto max-w-[860px] text-center">
           <h2 className="text-[30px] font-semibold tracking-tight text-[#133374] md:text-[36px]">
-            Overview of All Members
+            Member List
           </h2>
           <p className="mt-2 text-[11px] leading-relaxed text-[#8A9CB0] md:text-[12px]">
-            Lorem ipsum dolor sit amet consectetur. Vitae ornare cursus justo libero venenatis donec.
+            Welcome to the Members Page of the Bangladesh Petroleum Dealers’, Distributor’s Agents’ & Petrol Pump
+            Owners’ Association. Our members are the backbone of the petroleum distribution and retail network of
+            Bangladesh.
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-[#8A9CB0] md:text-[12px]">
+            Collective strength of petrol pump owners, dealers, and distributors across Bangladesh.
           </p>
           {statusMessage ? (
             <p className="mt-3 text-[11px] font-medium text-[#FC7160] md:text-[12px]">{statusMessage}</p>

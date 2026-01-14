@@ -8,8 +8,8 @@ export default function TotalStationsPage() {
   return (
     <div>
       <PageHero
-        title="Members"
-        subtitle="Lorem ipsum dolor sit amet consectetur. Neque aliquam amet commodo sollicitudin"
+        title="Total Station List"
+        subtitle="Comprehensive list of all registered petrol stations across Bangladesh."
         backgroundImage={heroBg}
         height="compact"
       />

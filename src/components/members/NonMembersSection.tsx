@@ -192,11 +192,13 @@ export default function NonMembersSection() {
       <div className="lpg-container relative z-10">
         <div className="mx-auto max-w-[860px] text-center">
           <h2 className="text-[30px] font-semibold tracking-tight text-[#133374] md:text-[36px]">
-            List of Non-Member Stations
+            Non-Member List
           </h2>
           <p className="mt-2 text-[11px] leading-relaxed text-[#8A9CB0] md:text-[12px]">
-            Lorem ipsum dolor sit amet consectetur. Semper id ipsum adipiscing dictum dictum ullamcorper est arcu.
-            Lobortis in pellentesque mi.
+            List of petroleum businesses currently not registered as association members.
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-[#8A9CB0] md:text-[12px]">
+            List of petroleum businesses currently not registered as association members.
           </p>
           {statusMessage ? (
             <p className="mt-3 text-[11px] font-medium text-[#FC7160] md:text-[12px]">{statusMessage}</p>
@@ -216,6 +218,9 @@ export default function NonMembersSection() {
             )}
             searchText={(r) => [r.stationName, r.ownerId, r.status, r.zone, r.district, r.upazila].join(' ')}
           />
+          <p className="mt-4 text-left text-[11px] font-medium text-[#133374] md:text-[12px]">
+            Note: Unverified stations + unverified owner এখানে দেখা যাবে, verified owner/ stations এখানে দেখা যাবে না।
+          </p>
         </div>
       </div>
     </section>

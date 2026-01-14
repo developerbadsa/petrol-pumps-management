@@ -36,7 +36,7 @@ type RunningStationRow = {
 };
 
 const fetchApprovedStations = async () => {
-  const res = await fetch('/api/public/gas-stations/approved');
+  const res = await fetch('/api/public/gas-stations/running');
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data?.message ?? 'Failed to load running stations');
@@ -59,7 +59,7 @@ function StatusBadge({status}: {status: string}) {
 
 export default function RunningStationsSection() {
   const stationsQ = useQuery({
-    queryKey: ['public', 'gas-stations', 'approved'],
+    queryKey: ['public', 'gas-stations', 'running'],
     queryFn: fetchApprovedStations,
   });
 
@@ -166,11 +166,10 @@ export default function RunningStationsSection() {
       <div className="lpg-container relative z-10">
         <div className="mx-auto max-w-[860px] text-center">
           <h2 className="text-[30px] font-semibold tracking-tight text-[#133374] md:text-[36px]">
-            List of All LPG Autogas Running Stations
+            Running Stations List
           </h2>
           <p className="mt-2 text-[11px] leading-relaxed text-[#8A9CB0] md:text-[12px]">
-            Lorem ipsum dolor sit amet consectetur. Semper id ipsum adipiscing dictum dictum ullamcorper est arcu.
-            Lobortis in pellentesque mi.
+            Approved gas stations currently operating across Bangladesh.
           </p>
           {statusMessage ? (
             <p className="mt-3 text-[11px] font-medium text-[#FC7160] md:text-[12px]">{statusMessage}</p>

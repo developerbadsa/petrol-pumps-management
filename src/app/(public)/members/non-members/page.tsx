@@ -8,8 +8,8 @@ export default function NonMembersPage() {
   return (
     <div>
       <PageHero
-        title="Members"
-        subtitle="Lorem ipsum dolor sit amet consectetur. Neque aliquam amet commodo sollicitudin"
+        title="Non-Member List"
+        subtitle="List of petroleum businesses currently not registered as association members."
         backgroundImage={heroBg}
         height="compact"
       />
