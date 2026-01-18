@@ -1,86 +1,123 @@
-import {NextResponse} from 'next/server';
-import {laravelFetch, LaravelHttpError} from '@/lib/http/laravelFetch';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { getFile, getString, validationErrorResponse } from '@/lib/validation';
+import { uploadToS3, validateFile } from '@/lib/upload';
+import { resolveMethod } from '@/lib/methodOverride';
+import { z } from 'zod';
 
-function extractId(req: Request, params?: Record<string, any>) {
-  const fromParams = params?.id ?? Object.values(params ?? {})[0];
-  const raw =
-    typeof fromParams === 'string'
-      ? fromParams
-      : Array.isArray(fromParams)
-        ? fromParams[0]
-        : null;
+export const runtime = 'nodejs';
 
-  if (raw) {
-    const n = Number(raw);
-    if (Number.isFinite(n)) return n;
-  }
+const updateSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  event_date: z.string().optional(),
+});
 
-  const pathname = new URL(req.url).pathname;
-  const last = pathname.split('/').filter(Boolean).pop() ?? '';
-  const id = Number(last);
-
-  if (!Number.isFinite(id)) throw new LaravelHttpError(400, 'Invalid album id');
-  return id;
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
 }
 
-export async function GET(req: Request, ctx: {params?: Record<string, any>}) {
-  try {
-    const id = extractId(req, ctx.params);
-    const data = await laravelFetch(`/albums/${id}`, {method: 'GET', auth: false});
-    return NextResponse.json(data, {status: 200});
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json({message: e.message, errors: e.errors ?? null}, {status: e.status});
-    }
-    return NextResponse.json({message: 'Failed to load album'}, {status: 500});
+async function uniqueSlug(title: string, albumId: number) {
+  const base = slugify(title);
+  let slug = base;
+  let counter = 1;
+  while (await prisma.album.findFirst({ where: { slug, id: { not: albumId } } })) {
+    slug = `${base}-${counter++}`;
   }
+  return slug;
 }
 
-export async function DELETE(req: Request, ctx: {params?: Record<string, any>}) {
-  try {
-    const id = extractId(req, ctx.params);
-    const data = await laravelFetch(`/albums/${id}`, {method: 'DELETE', auth: true});
-    return NextResponse.json(data, {status: 200});
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json({message: e.message, errors: e.errors ?? null}, {status: e.status});
-    }
-    return NextResponse.json({message: 'Failed to delete album'}, {status: 500});
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const album = await prisma.album.findUnique({
+    where: { id: Number(id) },
+    include: { images: true },
+  });
+  if (!album) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }
+  return NextResponse.json(album, { status: 200 });
 }
 
-async function updateAlbum(req: Request, ctx: {params?: Record<string, any>}) {
-  const id = extractId(req, ctx.params);
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  if (resolveMethod(req) !== 'PUT') {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
+  }
+
+  const { id } = await ctx.params;
+  const albumId = Number(id);
+  const existing = await prisma.album.findUnique({ where: { id: albumId } });
+  if (!existing) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
   const formData = await req.formData();
-  if (!formData.has('_method')) formData.set('_method', 'PUT');
+  const payload = {
+    title: getString(formData.get('title')) ?? undefined,
+    description: getString(formData.get('description')) ?? undefined,
+    event_date: getString(formData.get('event_date')) ?? undefined,
+  };
 
-  const data = await laravelFetch(`/albums/${id}`, {
-    method: 'POST',
-    auth: true,
-    body: formData,
+  const parsed = updateSchema.safeParse(payload);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
+  }
+
+  const cover = getFile(formData.get('cover'));
+  if (cover) {
+    const error = validateFile(cover, {
+      prefix: 'cover',
+      maxBytes: 10 * 1024 * 1024,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    });
+    if (error) {
+      return NextResponse.json({ message: 'Validation error', errors: { cover: [error] } }, { status: 422 });
+    }
+  }
+
+  const data: Record<string, unknown> = {};
+  if (parsed.data.title) {
+    data.title = parsed.data.title;
+    data.slug = await uniqueSlug(parsed.data.title, albumId);
+  }
+  if (parsed.data.description !== undefined) data.description = parsed.data.description;
+  if (parsed.data.event_date) data.event_date = new Date(parsed.data.event_date);
+  if (cover) {
+    data.cover_url = await uploadToS3(cover, { prefix: 'albums', maxBytes: 10 * 1024 * 1024 });
+  }
+
+  const album = await prisma.album.update({
+    where: { id: albumId },
+    data,
+    include: { images: true },
   });
 
-  return NextResponse.json(data, {status: 200});
+  return NextResponse.json(album, { status: 200 });
 }
 
-export async function PUT(req: Request, ctx: {params?: Record<string, any>}) {
-  try {
-    return await updateAlbum(req, ctx);
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json({message: e.message, errors: e.errors ?? null}, {status: e.status});
-    }
-    return NextResponse.json({message: 'Failed to update album'}, {status: 500});
+export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
-}
 
-export async function POST(req: Request, ctx: {params?: Record<string, any>}) {
-  try {
-    return await updateAlbum(req, ctx);
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json({message: e.message, errors: e.errors ?? null}, {status: e.status});
-    }
-    return NextResponse.json({message: 'Failed to update album'}, {status: 500});
+  const { id } = await ctx.params;
+  const albumId = Number(id);
+  const existing = await prisma.album.findUnique({ where: { id: albumId } });
+  if (!existing) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }
+
+  await prisma.album.delete({ where: { id: albumId } });
+  return NextResponse.json({ message: 'Deleted successfully' }, { status: 200 });
 }

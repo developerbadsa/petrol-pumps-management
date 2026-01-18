@@ -33,7 +33,6 @@ function slugify(value: string) {
 
 async function generateUniqueUsername(base: string) {
   let attempt = `${slugify(base)}-${Math.floor(Math.random() * 10000)}`;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const exists = await prisma.user.findUnique({ where: { username: attempt } });
     if (!exists) {
