@@ -39,8 +39,10 @@ export async function laravelFetch<T>(
    path: string,
    init: RequestInit & {auth?: boolean} = {}
 ): Promise<T> {
-   const base =
-      process.env.API_BASE_URL ?? 'https://admin.petroleumstationbd.com/api';
+   const base = process.env.API_BASE_URL;
+   if (!base) {
+      throw new Error('Missing API_BASE_URL for proxy request.');
+   }
    const url = joinUrl(base, path);
    const token = await getToken();
    const auth = init.auth ?? true;

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getToken } from '@/lib/auth/cookies';
 
-const DEFAULT_ORIGIN = 'https://admin.petroleumstationbd.com';
 
 function getFilename(url: URL) {
   const name = url.pathname.split('/').pop();
@@ -16,7 +15,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ message: 'Missing url' }, { status: 400 });
   }
 
-  const origin = process.env.NEXT_PUBLIC_LARAVEL_ORIGIN ?? DEFAULT_ORIGIN;
+  const origin = process.env.NEXT_PUBLIC_LARAVEL_ORIGIN ?? new URL(req.url).origin;
   let targetUrl: URL;
 
   try {
