@@ -1,0 +1,341 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StationOwnerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum GasStationVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MemberStatus {
+  PENDING
+  APPROVED
+}
+
+enum MembershipFeeStatus {
+  active
+  inactive
+}
+
+enum DocumentStatus {
+  active
+  inactive
+}
+
+enum BusinessType {
+  Dealer
+  Agent
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  full_name     String
+  email         String       @unique
+  phone_number  String       @unique
+  username      String       @unique
+  bio           String?
+  address       String?
+  avatar_url    String?
+  password_hash String
+  created_at    DateTime     @default(now())
+
+  tokens         ApiToken[]
+  paymentRecords PaymentRecord[]
+}
+
+model ApiToken {
+  id         Int       @id @default(autoincrement())
+  token_hash String    @unique
+  user_id    Int
+  created_at DateTime  @default(now())
+  revoked_at DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model ContactMessage {
+  id           Int      @id @default(autoincrement())
+  sender_name  String
+  sender_email String
+  sender_phone String
+  subject      String
+  message      String
+  is_read      Boolean  @default(false)
+  created_at   DateTime @default(now())
+}
+
+model Notice {
+  id           Int      @id @default(autoincrement())
+  title        String
+  content      String
+  publish_date DateTime
+  created_at   DateTime @default(now())
+
+  attachments NoticeAttachment[]
+}
+
+model NoticeAttachment {
+  id        Int      @id @default(autoincrement())
+  notice_id Int
+  file_url  String
+  created_at DateTime @default(now())
+
+  notice Notice @relation(fields: [notice_id], references: [id], onDelete: Cascade)
+}
+
+model Album {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  description String?
+  event_date  DateTime?
+  cover_url   String?
+  created_at  DateTime @default(now())
+
+  images AlbumImage[]
+}
+
+model AlbumImage {
+  id        Int      @id @default(autoincrement())
+  album_id  Int
+  image_url String
+  created_at DateTime @default(now())
+
+  album Album @relation(fields: [album_id], references: [id], onDelete: Cascade)
+}
+
+model Banner {
+  id        Int      @id @default(autoincrement())
+  title     String
+  image_url String
+  type      String
+  created_at DateTime @default(now())
+}
+
+model Popup {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  image_url   String
+  start_date  DateTime?
+  end_date    DateTime?
+  created_at  DateTime @default(now())
+}
+
+model Video {
+  id            Int      @id @default(autoincrement())
+  title         String
+  youtube_link  String
+  thumbnail_url String?
+  created_at    DateTime @default(now())
+}
+
+model CentralCommittee {
+  id             Int      @id @default(autoincrement())
+  position_name  String
+  position_slug  String
+  position_order Int
+  full_name      String
+  designation    String
+  company_name   String
+  profile_image_url String
+  facebook_url   String?
+  linkedin_url   String?
+  whatsapp_url   String?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+}
+
+model Division {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  is_active Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  districts      District[]
+  zonalCommittees ZonalCommittee[]
+}
+
+model ZonalCommittee {
+  id             Int      @id @default(autoincrement())
+  division_id    Int
+  position_name  String
+  position_slug  String
+  position_order Int
+  full_name      String
+  designation    String?
+  company_name   String
+  profile_image_url String
+  facebook_url   String?
+  linkedin_url   String?
+  whatsapp_url   String?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+
+  division Division @relation(fields: [division_id], references: [id], onDelete: Cascade)
+}
+
+model District {
+  id         Int      @id @default(autoincrement())
+  division_id Int
+  name       String
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  division Division @relation(fields: [division_id], references: [id], onDelete: Cascade)
+  upazilas Upazila[]
+  gasStations GasStation[]
+}
+
+model Upazila {
+  id         Int      @id @default(autoincrement())
+  district_id Int
+  name       String
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  district District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+  gasStations GasStation[]
+}
+
+model StationOwner {
+  id            Int      @id @default(autoincrement())
+  full_name     String
+  phone_number  String   @unique
+  email         String   @unique
+  password_hash String
+  address       String
+  profile_image_url String?
+  status        StationOwnerStatus @default(PENDING)
+  rejection_reason String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  gasStations GasStation[]
+}
+
+model GasStation {
+  id                    Int      @id @default(autoincrement())
+  station_owner_id      Int
+  station_name          String
+  oil_company_name      String?
+  fuel_type             String?
+  station_type          String?
+  station_status        String?
+  business_type         String?
+  dealership_agreement  String?
+  division_id           Int
+  district_id           Int
+  upazila_id            Int
+  station_address       String
+  commencement_date     DateTime?
+  contact_person_name   String?
+  contact_person_phone  String?
+  verification_status   GasStationVerificationStatus @default(PENDING)
+  verified_by           Int?
+  verified_at           DateTime?
+  rejection_reason      String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  stationOwner StationOwner @relation(fields: [station_owner_id], references: [id], onDelete: Cascade)
+  division Division @relation(fields: [division_id], references: [id], onDelete: Restrict)
+  district District @relation(fields: [district_id], references: [id], onDelete: Restrict)
+  upazila Upazila @relation(fields: [upazila_id], references: [id], onDelete: Restrict)
+
+  otherBusinesses GasStationOtherBusiness[]
+  documents StationDocument[]
+  paymentRecords PaymentRecord[]
+}
+
+model OtherBusiness {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  created_at DateTime @default(now())
+
+  gasStations GasStationOtherBusiness[]
+}
+
+model GasStationOtherBusiness {
+  gas_station_id  Int
+  other_business_id Int
+
+  gasStation GasStation @relation(fields: [gas_station_id], references: [id], onDelete: Cascade)
+  otherBusiness OtherBusiness @relation(fields: [other_business_id], references: [id], onDelete: Cascade)
+
+  @@id([gas_station_id, other_business_id])
+}
+
+model StationDocument {
+  id            Int      @id @default(autoincrement())
+  gas_station_id Int
+  document_type String
+  file_url      String
+  created_at    DateTime @default(now())
+
+  gasStation GasStation @relation(fields: [gas_station_id], references: [id], onDelete: Cascade)
+}
+
+model MembershipFee {
+  id        Int      @id @default(autoincrement())
+  amount    Decimal  @db.Decimal(12, 2)
+  status    MembershipFeeStatus
+  created_at DateTime @default(now())
+}
+
+model DownloadableDocument {
+  id           Int      @id @default(autoincrement())
+  title        String
+  publish_date DateTime
+  document_url String
+  status       DocumentStatus @default(active)
+  created_at   DateTime @default(now())
+}
+
+model PaymentRecord {
+  id            Int      @id @default(autoincrement())
+  station_id    Int
+  bank_name     String
+  amount_paid   Decimal  @db.Decimal(12, 2)
+  note          String?
+  payment_doc_url String
+  created_by_id Int
+  created_at    DateTime @default(now())
+
+  station GasStation @relation(fields: [station_id], references: [id], onDelete: Cascade)
+  createdBy User @relation(fields: [created_by_id], references: [id], onDelete: Restrict)
+}
+
+model Member {
+  id                                 Int      @id @default(autoincrement())
+  member_name                        String
+  member_nid_number                  String
+  station_name_address               String
+  district                           String
+  member_mobile_number               String
+  oil_company_name                   String
+  type_of_business                   BusinessType
+  representative_name                String
+  representative_nid_number          String
+  filling_station_phone_number       String?
+  required_documents_url             String
+  trade_license_number               String
+  tin_number                         String
+  explosives_department_license_number String?
+  application_date                   DateTime
+  applicant_signature_url            String
+  status                             MemberStatus @default(PENDING)
+  created_at                         DateTime @default(now())
+}

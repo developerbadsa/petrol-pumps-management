@@ -1,24 +1,46 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { getAuthenticatedUser, hashPassword, verifyPassword } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { validationErrorResponse } from '@/lib/validation';
+import { z } from 'zod';
+
+export const runtime = 'nodejs';
+
+const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1),
+    new_password: z.string().min(8),
+    new_password_confirmation: z.string().min(8),
+  })
+  .refine((data) => data.new_password === data.new_password_confirmation, {
+    path: ['new_password_confirmation'],
+    message: 'Passwords do not match',
+  });
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-
-    const data = await laravelFetch('/change-password', {
-      method: 'POST',
-      auth: true,
-      body: JSON.stringify(body),
-    });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to change password' }, { status: 500 });
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const body = await req.json();
+  const parsed = changePasswordSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
+  }
+
+  const isValid = await verifyPassword(parsed.data.current_password, auth.user.password_hash);
+  if (!isValid) {
+    return NextResponse.json(
+      { message: 'Validation error', errors: { current_password: ['Current password is incorrect.'] } },
+      { status: 422 }
+    );
+  }
+
+  await prisma.user.update({
+    where: { id: auth.user.id },
+    data: { password_hash: await hashPassword(parsed.data.new_password) },
+  });
+
+  return NextResponse.json({ message: 'Password updated successfully' }, { status: 200 });
 }

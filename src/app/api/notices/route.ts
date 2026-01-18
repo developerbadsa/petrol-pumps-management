@@ -1,39 +1,72 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { getString, validationErrorResponse } from '@/lib/validation';
+import { uploadToS3, validateFile } from '@/lib/upload';
+import { z } from 'zod';
+
+export const runtime = 'nodejs';
+
+const noticeSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  publish_date: z.string().min(1),
+});
 
 export async function GET() {
-  try {
-    const data = await laravelFetch('/notices', { method: 'GET', auth: true });
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load notices' }, { status: 500 });
-  }
+  const notices = await prisma.notice.findMany({
+    include: { attachments: true },
+    orderBy: { publish_date: 'desc' },
+  });
+  return NextResponse.json(notices, { status: 200 });
 }
 
 export async function POST(req: Request) {
-  try {
-    const fd = await req.formData();
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
+  }
 
-    const data = await laravelFetch('/notices', {
-      method: 'POST',
-      auth: true,
-      body: fd,
+  const formData = await req.formData();
+  const payload = {
+    title: getString(formData.get('title')) ?? '',
+    content: getString(formData.get('content')) ?? '',
+    publish_date: getString(formData.get('publish_date')) ?? '',
+  };
+
+  const parsed = noticeSchema.safeParse(payload);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
+  }
+
+  const attachments = formData.getAll('attachments[]').filter((item) => typeof item !== 'string') as File[];
+  const attachmentUrls: string[] = [];
+  for (const attachment of attachments) {
+    const error = validateFile(attachment, {
+      prefix: 'attachments',
+      maxBytes: 10 * 1024 * 1024,
     });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
+    if (error) {
       return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
+        { message: 'Validation error', errors: { attachments: [error] } },
+        { status: 422 }
       );
     }
-    return NextResponse.json({ message: 'Failed to create notice' }, { status: 500 });
+    const url = await uploadToS3(attachment, { prefix: 'notices', maxBytes: 10 * 1024 * 1024 });
+    attachmentUrls.push(url);
   }
+
+  const notice = await prisma.notice.create({
+    data: {
+      title: parsed.data.title,
+      content: parsed.data.content,
+      publish_date: new Date(parsed.data.publish_date),
+      attachments: {
+        create: attachmentUrls.map((file_url) => ({ file_url })),
+      },
+    },
+    include: { attachments: true },
+  });
+
+  return NextResponse.json(notice, { status: 200 });
 }

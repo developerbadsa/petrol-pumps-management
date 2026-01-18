@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+
+export const runtime = 'nodejs';
 
 export async function GET() {
-  try {
-    const data = await laravelFetch('/notices', { method: 'GET', auth: false });
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load notices' }, { status: 500 });
-  }
+  const notices = await prisma.notice.findMany({
+    include: { attachments: true },
+    orderBy: { publish_date: 'desc' },
+  });
+  return NextResponse.json(notices, { status: 200 });
 }

@@ -1,26 +1,16 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await ctx.params;
+export const runtime = 'nodejs';
 
-    const data = await laravelFetch(`/notices/${id}`, {
-      method: 'GET',
-      auth: false,
-    });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load notice details' }, { status: 500 });
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const notice = await prisma.notice.findUnique({
+    where: { id: Number(id) },
+    include: { attachments: true },
+  });
+  if (!notice) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }
+  return NextResponse.json(notice, { status: 200 });
 }
