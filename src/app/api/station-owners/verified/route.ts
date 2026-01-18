@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export async function GET() {
-  try {
-    const data = await laravelFetch<any>('/station-owners/verified', { method: 'GET', auth: true });
-    return NextResponse.json(data);
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json({ message: e.message, errors: e.errors ?? null }, { status: e.status });
-    }
-    console.error(e);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+export async function GET(req: Request) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const owners = await prisma.stationOwner.findMany({
+    where: { status: 'APPROVED' },
+    include: { gasStations: true },
+    orderBy: { created_at: 'desc' },
+  });
+
+  return NextResponse.json(owners, { status: 200 });
 }

@@ -1,32 +1,21 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-type Ctx = { params: Promise<{ id: string }> | { id: string } };
+export const runtime = 'nodejs';
 
-export async function DELETE(_req: Request, ctx: Ctx) {
-  const { id } = await Promise.resolve(ctx.params);
-
-  if (!id) {
-    return NextResponse.json(
-      { message: 'Missing message id', errors: null },
-      { status: 400 }
-    );
+export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
 
-  try {
-    await laravelFetch(`/contact-messages/${id}`, {
-      method: 'DELETE',
-      auth: true,
-    });
-
-    return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to delete message' }, { status: 500 });
+  const { id } = await ctx.params;
+  const message = await prisma.contactMessage.findUnique({ where: { id: Number(id) } });
+  if (!message) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }
+
+  await prisma.contactMessage.delete({ where: { id: Number(id) } });
+  return NextResponse.json({ message: 'Deleted successfully' }, { status: 200 });
 }

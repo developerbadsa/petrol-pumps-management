@@ -1,43 +1,45 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { validationErrorResponse } from '@/lib/validation';
+import { z } from 'zod';
 
-export async function GET() {
-  try {
-    const data = await laravelFetch('/other-businesses', {
-      method: 'GET',
-      auth: true,
-    });
+export const runtime = 'nodejs';
 
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load other businesses' }, { status: 500 });
+const businessSchema = z.object({
+  name: z.string().min(1),
+});
+
+export async function GET(req: Request) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const businesses = await prisma.otherBusiness.findMany({ orderBy: { name: 'asc' } });
+  return NextResponse.json(businesses, { status: 200 });
 }
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-
-    const data = await laravelFetch('/other-businesses', {
-      method: 'POST',
-      auth: true,
-      body,
-    });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to create other business' }, { status: 500 });
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const body = await req.json();
+  const parsed = businessSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
+  }
+
+  const exists = await prisma.otherBusiness.findUnique({ where: { name: parsed.data.name } });
+  if (exists) {
+    return NextResponse.json(
+      { message: 'Validation error', errors: { name: ['The name has already been taken.'] } },
+      { status: 422 }
+    );
+  }
+
+  const business = await prisma.otherBusiness.create({ data: parsed.data });
+  return NextResponse.json(business, { status: 200 });
 }

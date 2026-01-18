@@ -1,48 +1,27 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch } from '@/lib/http/laravelFetch';
-import { normalizeList } from '@/lib/http/normalize';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-function getVerifySignal(r: any) {
-  // station-level
-  const s1 =
-    r?.verification_status ??
-    r?.verificationStatus ??
-    r?.status ??
-    (typeof r?.is_verified === 'boolean' ? (r.is_verified ? 'verified' : 'unverified') : undefined) ??
-    (typeof r?.verified === 'boolean' ? (r.verified ? 'verified' : 'unverified') : undefined);
-
-  // owner-level (common)
-  const so = r?.station_owner ?? r?.owner;
-  const s2 =
-    so?.verification_status ??
-    so?.verificationStatus ??
-    so?.status ??
-    (typeof so?.is_verified === 'boolean' ? (so.is_verified ? 'verified' : 'unverified') : undefined);
-
-  return s1 ?? s2 ?? '';
-}
-
-function isVerified(r: any) {
-  const s = String(getVerifySignal(r)).trim().toLowerCase();
-  if (!s) return false;
-
-  if (['verified', 'approved', 'active'].includes(s)) return true;
-  if (['unverified', 'pending', 'rejected', 'inactive'].includes(s)) return false;
-
-  return false;
-}
+export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const qs = url.searchParams.toString();
-  const path = qs ? `/gas-stations?${qs}` : '/gas-stations';
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
+  }
 
-  const raw = await laravelFetch<any>(path, { method: 'GET', auth: true });
-  const list = normalizeList<any>(raw);
+  const stations = await prisma.gasStation.findMany({
+    where: { verification_status: 'PENDING' },
+    include: {
+      stationOwner: true,
+      division: true,
+      district: true,
+      upazila: true,
+      otherBusinesses: { include: { otherBusiness: true } },
+      documents: true,
+    },
+    orderBy: { created_at: 'desc' },
+  });
 
-  // If backend doesn't return any verification fields, we do not filter (avoid empty UI)
-  const hasSignal = list.some((r) => String(getVerifySignal(r)).trim().length > 0);
-  const filtered = hasSignal ? list.filter((r) => !isVerified(r)) : list;
-
-  return NextResponse.json(filtered);
+  return NextResponse.json(stations, { status: 200 });
 }

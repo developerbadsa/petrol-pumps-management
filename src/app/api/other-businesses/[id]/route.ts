@@ -1,76 +1,82 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { validationErrorResponse } from '@/lib/validation';
+import { resolveMethod } from '@/lib/methodOverride';
+import { z } from 'zod';
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await ctx.params;
+export const runtime = 'nodejs';
 
-    const data = await laravelFetch(`/other-businesses/${id}`, {
-      method: 'GET',
-      auth: true,
-    });
+const updateSchema = z.object({
+  name: z.string().min(1).optional(),
+});
 
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load other business' }, { status: 500 });
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const { id } = await ctx.params;
+  const business = await prisma.otherBusiness.findUnique({ where: { id: Number(id) } });
+  if (!business) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+  return NextResponse.json(business, { status: 200 });
 }
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await ctx.params;
-    const body = await req.json();
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  if (resolveMethod(req) !== 'PUT') {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
-    const data = await laravelFetch(`/other-businesses/${id}?_method=PUT`, {
-      method: 'POST',
-      auth: true,
-      body,
-    });
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
+  }
 
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
+  const body = await req.json();
+  const parsed = updateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
+  }
+
+  const { id } = await ctx.params;
+  const business = await prisma.otherBusiness.findUnique({ where: { id: Number(id) } });
+  if (!business) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  if (parsed.data.name) {
+    const exists = await prisma.otherBusiness.findUnique({ where: { name: parsed.data.name } });
+    if (exists && exists.id !== business.id) {
       return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
+        { message: 'Validation error', errors: { name: ['The name has already been taken.'] } },
+        { status: 422 }
       );
     }
-    return NextResponse.json({ message: 'Failed to update other business' }, { status: 500 });
   }
+
+  const updated = await prisma.otherBusiness.update({
+    where: { id: business.id },
+    data: { name: parsed.data.name },
+  });
+
+  return NextResponse.json(updated, { status: 200 });
 }
 
-export async function DELETE(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await ctx.params;
-
-    const data = await laravelFetch(`/other-businesses/${id}`, {
-      method: 'DELETE',
-      auth: true,
-    });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to delete other business' }, { status: 500 });
+export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const { id } = await ctx.params;
+  const business = await prisma.otherBusiness.findUnique({ where: { id: Number(id) } });
+  if (!business) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  await prisma.otherBusiness.delete({ where: { id: business.id } });
+  return NextResponse.json({ message: 'Deleted successfully' }, { status: 200 });
 }

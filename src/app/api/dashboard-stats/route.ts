@@ -1,21 +1,29 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-export async function GET() {
-  try {
-    const data = await laravelFetch('/dashboard-stats', {
-      method: 'GET',
-      auth: true,
-    });
+export const runtime = 'nodejs';
 
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load dashboard stats' }, { status: 500 });
+export async function GET(req: Request) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const [totalStations, totalStationOwners, unreadMessages, activeNotices] = await Promise.all([
+    prisma.gasStation.count(),
+    prisma.stationOwner.count(),
+    prisma.contactMessage.count({ where: { is_read: false } }),
+    prisma.notice.count({ where: { publish_date: { lte: new Date() } } }),
+  ]);
+
+  return NextResponse.json(
+    {
+      total_stations: totalStations,
+      total_station_owners: totalStationOwners,
+      unread_messages: unreadMessages,
+      active_notices: activeNotices,
+    },
+    { status: 200 }
+  );
 }

@@ -1,76 +1,113 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { getFile, getString, validationErrorResponse } from '@/lib/validation';
+import { uploadToS3, validateFile } from '@/lib/upload';
+import { resolveMethod } from '@/lib/methodOverride';
+import { z } from 'zod';
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await ctx.params;
+export const runtime = 'nodejs';
 
-    const data = await laravelFetch(`/station-documents/${id}`, {
-      method: 'GET',
-      auth: true,
-    });
+const updateSchema = z.object({
+  gas_station_id: z.coerce.number().int().optional(),
+  document_type: z.string().min(1).optional(),
+});
 
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load station document' }, { status: 500 });
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const { id } = await ctx.params;
+  const document = await prisma.stationDocument.findUnique({
+    where: { id: Number(id) },
+    include: { gasStation: true },
+  });
+  if (!document) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+  return NextResponse.json(document, { status: 200 });
 }
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await ctx.params;
-    const formData = await req.formData();
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  if (resolveMethod(req) !== 'PUT') {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
-    const data = await laravelFetch(`/station-documents/${id}?_method=PUT`, {
-      method: 'POST',
-      auth: true,
-      body: formData,
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
+  }
+
+  const { id } = await ctx.params;
+  const document = await prisma.stationDocument.findUnique({ where: { id: Number(id) } });
+  if (!document) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  const formData = await req.formData();
+  const payload = {
+    gas_station_id: getString(formData.get('gas_station_id')) ?? undefined,
+    document_type: getString(formData.get('document_type')) ?? undefined,
+  };
+
+  const parsed = updateSchema.safeParse(payload);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
+  }
+
+  if (parsed.data.gas_station_id) {
+    const station = await prisma.gasStation.findUnique({ where: { id: parsed.data.gas_station_id } });
+    if (!station) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+  }
+
+  const file = getFile(formData.get('file'));
+  let fileUrl: string | undefined;
+  if (file) {
+    const fileError = validateFile(file, {
+      prefix: 'file',
+      maxBytes: 20 * 1024 * 1024,
     });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
+    if (fileError) {
       return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
+        { message: 'Validation error', errors: { file: [fileError] } },
+        { status: 422 }
       );
     }
-    return NextResponse.json({ message: 'Failed to update station document' }, { status: 500 });
+    fileUrl = await uploadToS3(file, {
+      prefix: 'station-documents',
+      maxBytes: 20 * 1024 * 1024,
+    });
   }
+
+  const updated = await prisma.stationDocument.update({
+    where: { id: document.id },
+    data: {
+      gas_station_id: parsed.data.gas_station_id,
+      document_type: parsed.data.document_type,
+      file_url: fileUrl,
+    },
+    include: { gasStation: true },
+  });
+
+  return NextResponse.json(updated, { status: 200 });
 }
 
-export async function DELETE(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await ctx.params;
-
-    const data = await laravelFetch(`/station-documents/${id}`, {
-      method: 'DELETE',
-      auth: true,
-    });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to delete station document' }, { status: 500 });
+export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const { id } = await ctx.params;
+  const document = await prisma.stationDocument.findUnique({ where: { id: Number(id) } });
+  if (!document) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  await prisma.stationDocument.delete({ where: { id: document.id } });
+  return NextResponse.json({ message: 'Deleted successfully' }, { status: 200 });
 }

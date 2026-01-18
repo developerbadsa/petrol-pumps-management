@@ -1,45 +1,47 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-type Ctx = { params: Promise<{ id: string }> };
+export const runtime = 'nodejs';
 
-export async function POST(_req: NextRequest, ctx: Ctx) {
-  try {
-    const { id } = await ctx.params;
-
-    // 1) Read gas station details to find station owner id
-    const station = await laravelFetch<any>(`/gas-stations/${id}`, {
-      method: 'GET',
-      auth: true,
-    });
-
-  const ownerId =
-    station?.station_owner_id ??
-    station?.stationOwnerId ??
-    station?.station_owner?.id ??
-    station?.owner?.id ??
-    null;
-
-  // 2) Prefer verifying station-owner (doc-defined)
-    if (ownerId) {
-      await laravelFetch<any>(`/station-owners/${ownerId}/approve`, {
-        method: 'POST',
-        auth: true,
-      });
-    }
-
-    // 3) Verify station itself (if backend uses station-level status)
-    const data = await laravelFetch<any>(`/gas-stations/${id}?_method=PUT`, {
-      method: 'POST',
-      auth: true,
-      body: JSON.stringify({ verification_status: 'APPROVED', is_verified: true }),
-    });
-
-    return NextResponse.json(data);
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json({ message: e.message, errors: e.errors ?? null }, { status: e.status });
-    }
-    return NextResponse.json({ message: 'Failed to verify station' }, { status: 500 });
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const { id } = await ctx.params;
+  const station = await prisma.gasStation.findUnique({
+    where: { id: Number(id) },
+    include: { stationOwner: true },
+  });
+  if (!station) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  const [updatedStation] = await prisma.$transaction([
+    prisma.gasStation.update({
+      where: { id: station.id },
+      data: {
+        verification_status: 'APPROVED',
+        verified_by: auth.user.id,
+        verified_at: new Date(),
+        rejection_reason: null,
+      },
+      include: {
+        stationOwner: true,
+        division: true,
+        district: true,
+        upazila: true,
+        otherBusinesses: { include: { otherBusiness: true } },
+        documents: true,
+      },
+    }),
+    prisma.stationOwner.update({
+      where: { id: station.station_owner_id },
+      data: { status: 'APPROVED', rejection_reason: null },
+    }),
+  ]);
+
+  return NextResponse.json(updatedStation, { status: 200 });
 }
