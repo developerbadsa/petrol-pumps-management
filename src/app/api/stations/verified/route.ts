@@ -1,44 +1,27 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch } from '@/lib/http/laravelFetch';
-import { normalizeList } from '@/lib/http/normalize';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-function hasVerificationSignal(r: any) {
-  return (
-    r?.verification_status != null ||
-    r?.verificationStatus != null ||
-    r?.is_verified != null ||
-    r?.verified != null ||
-    r?.status != null
-  );
-}
-
-function isVerified(r: any) {
-  if (typeof r?.is_verified === 'boolean') return r.is_verified;
-  if (typeof r?.verified === 'boolean') return r.verified;
-
-  const s = String(r?.verification_status ?? r?.verificationStatus ?? r?.status ?? '')
-    .trim()
-    .toLowerCase();
-
-  if (!s) return false;
-
-  // allow common “approved” style values
-  if (['verified', 'approved', 'active'].includes(s)) return true;
-  if (['unverified', 'pending', 'rejected', 'inactive'].includes(s)) return false;
-
-  return false;
-}
+export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const qs = url.searchParams.toString();
-  const path = qs ? `/gas-stations?${qs}` : '/gas-stations';
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
+  }
 
-  const raw = await laravelFetch<any>(path, { method: 'GET', auth: true });
-  const list = normalizeList<any>(raw);
+  const stations = await prisma.gasStation.findMany({
+    where: { verification_status: 'APPROVED' },
+    include: {
+      stationOwner: true,
+      division: true,
+      district: true,
+      upazila: true,
+      otherBusinesses: { include: { otherBusiness: true } },
+      documents: true,
+    },
+    orderBy: { created_at: 'desc' },
+  });
 
-  const shouldFilter = list.some(hasVerificationSignal);
-  const filtered = shouldFilter ? list.filter(isVerified) : list;
-
-  return NextResponse.json(filtered);
+  return NextResponse.json(stations, { status: 200 });
 }

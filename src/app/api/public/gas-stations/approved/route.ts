@@ -1,20 +1,38 @@
-import {NextResponse} from 'next/server';
-import {laravelFetch, LaravelHttpError} from '@/lib/http/laravelFetch';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { buildPagination } from '@/lib/pagination';
 
-export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export async function GET(request: Request) {
-  try {
-    const {searchParams} = new URL(request.url);
-    const query = searchParams.toString();
-    const url = query ? `/public/gas-stations/approved?${query}` : '/public/gas-stations/approved';
-    const data = await laravelFetch<any>(url, {method: 'GET', auth: false});
-    return NextResponse.json(data);
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json({message: e.message, errors: e.errors ?? null}, {status: e.status});
-    }
-    console.error(e);
-    return NextResponse.json({message: 'Internal Server Error'}, {status: 500});
-  }
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const page = Number(url.searchParams.get('page') ?? '1');
+  const perPage = Number(url.searchParams.get('per_page') ?? '20');
+  const safePage = Number.isNaN(page) || page < 1 ? 1 : page;
+  const safePerPage = Number.isNaN(perPage) || perPage < 1 ? 20 : perPage;
+
+  const total = await prisma.gasStation.count({ where: { verification_status: 'APPROVED' } });
+  const stations = await prisma.gasStation.findMany({
+    where: { verification_status: 'APPROVED' },
+    include: { division: true, district: true, upazila: true },
+    orderBy: { created_at: 'desc' },
+    skip: (safePage - 1) * safePerPage,
+    take: safePerPage,
+  });
+
+  const data = stations.map((station) => ({
+    id: station.id,
+    station_name: station.station_name,
+    oil_company_name: station.oil_company_name,
+    station_owner_id: station.station_owner_id,
+    verification_status: station.verification_status,
+    location: {
+      division: station.division.name,
+      district: station.district.name,
+      upazila: station.upazila.name,
+    },
+  }));
+
+  const pagination = buildPagination(data, total, safePage, safePerPage, `${url.origin}/api/public/gas-stations/approved`);
+  return NextResponse.json(pagination, { status: 200 });
 }

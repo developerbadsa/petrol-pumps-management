@@ -1,39 +1,41 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { validationErrorResponse } from '@/lib/validation';
+import { z } from 'zod';
 
-export async function GET() {
-  try {
-    const data = await laravelFetch('/contact-messages', { method: 'GET', auth: true });
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to load messages' }, { status: 500 });
+export const runtime = 'nodejs';
+
+const contactSchema = z.object({
+  sender_name: z.string().min(1),
+  sender_email: z.string().email(),
+  sender_phone: z.string().min(1),
+  subject: z.string().min(1),
+  message: z.string().min(1),
+});
+
+export async function GET(req: Request) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const messages = await prisma.contactMessage.findMany({
+    orderBy: { created_at: 'desc' },
+  });
+  return NextResponse.json(messages, { status: 200 });
 }
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-
-    const data = await laravelFetch('/contact-messages', {
-      method: 'POST',
-      auth: false, // public endpoint
-      body: JSON.stringify(body),
-    });
-
-    return NextResponse.json(data, { status: 200 });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Failed to send message' }, { status: 500 });
+  const body = await req.json();
+  const parsed = contactSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
   }
+
+  const message = await prisma.contactMessage.create({
+    data: parsed.data,
+  });
+
+  return NextResponse.json(message, { status: 200 });
 }

@@ -1,28 +1,37 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { validationErrorResponse } from '@/lib/validation';
+import { z } from 'zod';
 
-type Ctx = { params: Promise<{ id: string }> };
+export const runtime = 'nodejs';
 
-export async function POST(req: Request, ctx: Ctx) {
-  const { id } = await ctx.params;
+const rejectSchema = z.object({
+  reason: z.string().min(1),
+});
 
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
-
-  try {
-    const data = await laravelFetch<any>(`/station-owners/${id}/reject`, {
-      method: 'POST',
-      auth: true,
-      body: JSON.stringify(body),
-    });
-    return NextResponse.json(data ?? { ok: true });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Server error' }, { status: 500 });
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const body = await req.json();
+  const parsed = rejectSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(validationErrorResponse(parsed.error), { status: 422 });
+  }
+
+  const { id } = await ctx.params;
+  const owner = await prisma.stationOwner.findUnique({ where: { id: Number(id) } });
+  if (!owner) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  const updated = await prisma.stationOwner.update({
+    where: { id: owner.id },
+    data: { status: 'REJECTED', rejection_reason: parsed.data.reason },
+  });
+
+  return NextResponse.json(updated, { status: 200 });
 }

@@ -1,24 +1,25 @@
 import { NextResponse } from 'next/server';
-import { laravelFetch, LaravelHttpError } from '@/lib/http/laravelFetch';
+import { prisma } from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-type Ctx = { params: Promise<{ id: string }> };
+export const runtime = 'nodejs';
 
-export async function POST(_: Request, ctx: Ctx) {
-  const { id } = await ctx.params;
-
-  try {
-    const data = await laravelFetch<any>(`/station-owners/${id}/approve`, {
-      method: 'POST',
-      auth: true,
-    });
-    return NextResponse.json(data ?? { ok: true });
-  } catch (e) {
-    if (e instanceof LaravelHttpError) {
-      return NextResponse.json(
-        { message: e.message, errors: e.errors ?? null },
-        { status: e.status }
-      );
-    }
-    return NextResponse.json({ message: 'Server error' }, { status: 500 });
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) {
+    return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });
   }
+
+  const { id } = await ctx.params;
+  const owner = await prisma.stationOwner.findUnique({ where: { id: Number(id) } });
+  if (!owner) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
+  const updated = await prisma.stationOwner.update({
+    where: { id: owner.id },
+    data: { status: 'APPROVED', rejection_reason: null },
+  });
+
+  return NextResponse.json(updated, { status: 200 });
 }

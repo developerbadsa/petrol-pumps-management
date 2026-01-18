@@ -1,28 +1,39 @@
-import {NextResponse} from 'next/server';
-import {LaravelHttpError, laravelFetch} from '@/lib/http/laravelFetch';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+
+export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
-   try {
-      const {searchParams} = new URL(req.url);
-      const divisionId = searchParams.get('division_id');
-      const qs = divisionId ? `?division_id=${divisionId}` : '';
+  const url = new URL(req.url);
+  const divisionId = url.searchParams.get('division_id');
+  if (!divisionId) {
+    return NextResponse.json(
+      { message: 'Validation error', errors: { division_id: ['The division_id field is required.'] } },
+      { status: 422 }
+    );
+  }
 
-      const data = await laravelFetch(`/public/zonal-committees${qs}`, {
-         method: 'GET',
-         auth: false,
-      });
+  const division = await prisma.division.findUnique({ where: { id: Number(divisionId) } });
+  if (!division) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
-      return NextResponse.json(data, {status: 200});
-   } catch (e) {
-      if (e instanceof LaravelHttpError) {
-         return NextResponse.json(
-            {message: e.message, errors: e.errors ?? null},
-            {status: e.status}
-         );
-      }
-      return NextResponse.json(
-         {message: 'Failed to load zonal committees'},
-         {status: 500}
-      );
-   }
+  const districts = await prisma.district.findMany({
+    where: { division_id: division.id },
+    select: { name: true },
+    orderBy: { name: 'asc' },
+  });
+
+  const members = await prisma.zonalCommittee.findMany({
+    where: { division_id: division.id },
+    orderBy: [{ position_order: 'asc' }, { created_at: 'desc' }],
+  });
+
+  return NextResponse.json(
+    {
+      districts: districts.map((district) => district.name),
+      members,
+    },
+    { status: 200 }
+  );
 }
